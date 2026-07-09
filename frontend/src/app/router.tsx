@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute'
 import { PublicOnlyRoute } from '@/features/auth/PublicOnlyRoute'
+import { ClientsPage, CourtsPage, EmployeesPage, PromotionsPage, TurnsPage, UsersPage } from '@/pages/CatalogPages'
 import { LoginPage } from '@/pages/LoginPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
@@ -10,36 +11,6 @@ const pages = [
     path: 'dashboard',
     title: 'Dashboard',
     description: 'Resumen operativo inicial. Las metricas reales llegan en la etapa de pagos y dashboard.',
-  },
-  {
-    path: 'clients',
-    title: 'Clientes',
-    description: 'Gestion de jugadores y datos de contacto prevista para la etapa de catalogos operativos.',
-  },
-  {
-    path: 'employees',
-    title: 'Empleados',
-    description: 'Administracion del personal interno del club, visible para rol Administrador.',
-  },
-  {
-    path: 'users',
-    title: 'Usuarios',
-    description: 'Alta, roles y estado de usuarios internos. El backend ya valida autenticacion por JWT.',
-  },
-  {
-    path: 'courts',
-    title: 'Canchas',
-    description: 'Catalogo de canchas y precios por hora para alimentar el flujo de reservas.',
-  },
-  {
-    path: 'turns',
-    title: 'Turnos',
-    description: 'Configuracion de horarios disponibles por cancha para prevenir doble ocupacion.',
-  },
-  {
-    path: 'promotions',
-    title: 'Promociones',
-    description: 'Descuentos activos y vigentes que se aplicaran al precio final de reservas.',
   },
   {
     path: 'reservations',
@@ -68,6 +39,12 @@ export function AppRouter() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route element={<Navigate replace to="/dashboard" />} index />
+          <Route element={<ClientsPage />} path="clients" />
+          <Route element={<EmployeesPage />} path="employees" />
+          <Route element={<UsersPage />} path="users" />
+          <Route element={<CourtsPage />} path="courts" />
+          <Route element={<TurnsPage />} path="turns" />
+          <Route element={<PromotionsPage />} path="promotions" />
           {pages.map((page) => (
             <Route
               element={<PlaceholderPage description={page.description} title={page.title} />}

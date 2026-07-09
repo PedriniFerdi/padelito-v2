@@ -74,8 +74,8 @@ export function AppLayout() {
         <section className="flex min-w-0 flex-1 flex-col">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
             <div>
-              <p className="text-xs font-medium uppercase text-slate-500">Etapa 2</p>
-              <h2 className="text-lg font-semibold">Seguridad y layout privado</h2>
+              <p className="text-xs font-medium uppercase text-slate-500">Etapa 3</p>
+              <h2 className="text-lg font-semibold">Catalogos operativos</h2>
             </div>
             <div className="flex items-center gap-3">
               <div className="min-w-0 text-right">
