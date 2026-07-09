@@ -67,7 +67,7 @@ internal static class PadelitoSeedData
         {
             Id = 1,
             Username = "admin",
-            PasswordHash = "AQAAAAIAAYagAAAAEKlUxApUaC++Cpt9h52jpYYoOh5rsBiS+qS16LsV4dmOmG5Yc8vYpEJT0IAght085A==",
+            PasswordHash = "AQAAAAIAAYagAAAAED2SFjyZfFosfjAmmH1n5FHdE59w+9e6K96p468HR/FvY6jo4v94M+pMCLf/9mpNhA==",
             EmployeeId = 1,
             RoleId = 1,
             IsActive = true,

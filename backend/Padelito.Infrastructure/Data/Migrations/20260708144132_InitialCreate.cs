@@ -418,7 +418,7 @@ namespace Padelito.Infrastructure.Data.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "CreatedAt", "EmployeeId", "IsActive", "PasswordHash", "RoleId", "Username" },
-                values: new object[] { 1, new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc), 1, true, "AQAAAAIAAYagAAAAEKlUxApUaC++Cpt9h52jpYYoOh5rsBiS+qS16LsV4dmOmG5Yc8vYpEJT0IAght085A==", 1, "admin" });
+                values: new object[] { 1, new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc), 1, true, "AQAAAAIAAYagAAAAED2SFjyZfFosfjAmmH1n5FHdE59w+9e6K96p468HR/FvY6jo4v94M+pMCLf/9mpNhA==", 1, "admin" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AvailableTurns_CourtId_StartTime_EndTime",
