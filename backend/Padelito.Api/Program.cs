@@ -1,6 +1,12 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Padelito.Api.Security;
+using Padelito.Application.Interfaces.Security;
+using Padelito.Application.Interfaces.Services;
+using Padelito.Application.Services;
+using Padelito.Domain.Entities;
 using Padelito.Infrastructure.Extensions;
 
 const string FrontendCorsPolicy = "Frontend";
@@ -11,6 +17,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddCors(options =>
 {

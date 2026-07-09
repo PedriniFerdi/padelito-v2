@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Padelito.Application.Interfaces.Repositories;
 using Padelito.Infrastructure.Data;
+using Padelito.Infrastructure.Repositories;
 
 namespace Padelito.Infrastructure.Extensions;
 
@@ -14,6 +16,8 @@ public static class ServiceCollectionExtensions
 
         services.AddDbContext<PadelitoDbContext>(options =>
             options.UseSqlServer(connectionString));
+
+        services.AddScoped<IUserRepository, UserRepository>();
 
         return services;
     }
