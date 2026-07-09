@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
             options.UseSqlServer(connectionString));
 
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ICatalogRepository, CatalogRepository>();
 
         return services;
     }

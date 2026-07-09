@@ -42,6 +42,10 @@ export async function apiFetch<TResponse>(
     throw new ApiRequestError(await getErrorMessage(response), response.status)
   }
 
+  if (response.status === 204) {
+    return undefined as TResponse
+  }
+
   return (await response.json()) as TResponse
 }
 
