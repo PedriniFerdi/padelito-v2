@@ -23,3 +23,67 @@ export type AuthResponse = {
   expiresAt: string
   user: CurrentUser
 }
+
+export type PersonCatalogItem = {
+  id: number
+  firstName: string
+  lastName: string
+  dni?: string | null
+  phone?: string | null
+  email?: string | null
+  isActive: boolean
+}
+
+export type Client = PersonCatalogItem
+
+export type Employee = PersonCatalogItem & {
+  hasUser: boolean
+}
+
+export type RoleCatalog = {
+  id: number
+  name: Role
+}
+
+export type UserCatalog = {
+  id: number
+  username: string
+  employeeId: number
+  employeeName: string
+  roleId: number
+  role: Role
+  isActive: boolean
+}
+
+export type CourtType = {
+  id: number
+  description: string
+}
+
+export type Court = {
+  id: number
+  name: string
+  courtTypeId: number
+  courtType: string
+  hourPrice: number
+  isActive: boolean
+}
+
+export type AvailableTurn = {
+  id: number
+  courtId: number
+  courtName: string
+  startTime: string
+  endTime: string
+  isActive: boolean
+}
+
+export type Promotion = {
+  id: number
+  name: string
+  description?: string | null
+  discountPercentage: number
+  dateFrom: string
+  dateTo: string
+  isActive: boolean
+}
