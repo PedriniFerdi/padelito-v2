@@ -87,3 +87,41 @@ export type Promotion = {
   dateTo: string
   isActive: boolean
 }
+
+export type ReservationStatus = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Finalizada'
+
+export type Reservation = {
+  id: number
+  reservationDate: string
+  clientId: number
+  clientName: string
+  availableTurnId: number
+  courtName: string
+  startTime: string
+  endTime: string
+  reservationStatusId: number
+  status: ReservationStatus
+  promotionName?: string | null
+  basePrice: number
+  finalPrice: number
+  createdAt: string
+}
+
+export type ReservationDetail = Reservation & {
+  courtId: number
+  courtType: string
+  employeeId: number
+  employeeName: string
+  promotionId?: number | null
+  discountPercentage?: number | null
+}
+
+export type ReservationAvailability = {
+  availableTurnId: number
+  courtId: number
+  courtName: string
+  courtType: string
+  startTime: string
+  endTime: string
+  basePrice: number
+}
