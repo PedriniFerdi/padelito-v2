@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="Padelito.Api/Padelito.Api.csproj" />
   <Project Path="Padelito.Application/Padelito.Application.csproj" />
+  <Project Path="Padelito.Application.Tests/Padelito.Application.Tests.csproj" />
   <Project Path="Padelito.Domain/Padelito.Domain.csproj" />
   <Project Path="Padelito.Infrastructure/Padelito.Infrastructure.csproj" />
 </Solution>
