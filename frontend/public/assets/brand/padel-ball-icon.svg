@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 48 48" role="img" aria-labelledby="title desc">
+  <title id="title">Padel ball icon</title>
+  <desc id="desc">Pelota de padel blanca estilizada sobre un cuadrado redondeado teal.</desc>
+  <defs>
+    <linearGradient id="ball-bg" x1="7" x2="42" y1="6" y2="43" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F766E"/>
+      <stop offset=".55" stop-color="#0D9488"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+    <filter id="ball-shadow" width="54" height="54" x="-3" y="-1" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" flood-color="#0F766E" flood-opacity=".2" stdDeviation="3"/>
+    </filter>
+  </defs>
+  <rect width="38" height="38" x="5" y="5" fill="url(#ball-bg)" rx="11" filter="url(#ball-shadow)"/>
+  <rect width="36.5" height="36.5" x="5.75" y="5.75" stroke="#ECFEFF" stroke-opacity=".18" stroke-width="1.5" rx="10.25"/>
+  <circle cx="24" cy="24" r="12.6" fill="#F8FAFC"/>
+  <path stroke="#0F766E" stroke-linecap="round" stroke-width="2.4" d="M13.4 29.9c5.2-.5 9.5-3 12.6-7.4 2-2.8 4.8-4.4 8.2-4.8"/>
+  <path stroke="#0D9488" stroke-linecap="round" stroke-width="2.4" d="M15.7 34.2c6.2-.7 11.2-3.6 15-8.8 1.1-1.5 2.4-2.6 4-3.2"/>
+  <path stroke="#5EEAD4" stroke-linecap="round" stroke-opacity=".95" stroke-width="2.1" d="M13 22.1c3.6-.5 6.5-2.1 8.6-4.8"/>
+</svg>

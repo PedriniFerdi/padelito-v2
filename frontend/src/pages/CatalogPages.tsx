@@ -31,7 +31,7 @@ function getErrorMessage(error: unknown) {
 
 function activeBadge(isActive: boolean) {
   return (
-    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-500'}`}>
       {isActive ? 'Activo' : 'Inactivo'}
     </span>
   )
@@ -51,15 +51,15 @@ function PageShell({
   title: string
 }) {
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 rounded-2xl border border-[#E2E8F0]/80 bg-white/55 p-5 shadow-[0_18px_46px_rgba(15,23,42,0.05)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-emerald-700">Etapa 3</p>
-          <h3 className="text-2xl font-semibold">{title}</h3>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">{description}</p>
+          <p className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-sm font-semibold text-[#0F766E]">Etapa 3</p>
+          <h3 className="mt-2 text-2xl font-semibold tracking-normal text-[#0F172A]">{title}</h3>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#475569]">{description}</p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800" onClick={onCreate} type="button">
-          <Plus aria-hidden="true" className="size-4" />
+        <button className="inline-flex translate-y-0 items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#0F766E_0%,#7C3AED_100%)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(15,118,110,0.22)] transition duration-200 hover:-translate-y-px hover:brightness-110 active:translate-y-0" onClick={onCreate} type="button">
+          <Plus aria-hidden="true" className="size-4" strokeWidth={2.2} />
           {actionLabel}
         </button>
       </div>
@@ -70,20 +70,20 @@ function PageShell({
 
 function SearchBox({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
-    <label className="flex max-w-sm items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
-      <Search aria-hidden="true" className="size-4" />
-      <input className="w-full outline-none" onChange={(event) => onChange(event.target.value)} placeholder="Buscar" value={value} />
+    <label className="flex w-full max-w-sm items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-3 py-2.5 text-sm text-[#475569] shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition focus-within:border-[#7C3AED] focus-within:ring-4 focus-within:ring-teal-500/10">
+      <Search aria-hidden="true" className="size-4 shrink-0 text-[#334155]" strokeWidth={1.9} />
+      <input className="w-full bg-transparent text-sm text-[#0F172A] outline-none placeholder:text-[#94A3B8]" onChange={(event) => onChange(event.target.value)} placeholder="Buscar" value={value} />
     </label>
   )
 }
 
 function Panel({ children }: { children: ReactNode }) {
-  return <div className="rounded-md border border-slate-200 bg-white">{children}</div>
+  return <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-[0_14px_35px_rgba(15,23,42,0.06)]">{children}</div>
 }
 
 function ActionButton({ children, onClick, title }: { children: React.ReactNode; onClick: () => void; title: string }) {
   return (
-    <button className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-100" onClick={onClick} title={title} type="button">
+    <button className="inline-flex size-8 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white text-[#334155] shadow-[0_6px_14px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-px hover:border-[#0F766E]/30 hover:bg-[#F8FAFC] hover:text-[#0F766E] active:translate-y-0" onClick={onClick} title={title} type="button">
       {children}
     </button>
   )
@@ -171,23 +171,23 @@ function PeopleTable<TItem extends Client | Employee>({
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <thead className="bg-[#F8FAFC] text-xs uppercase text-[#334155]">
           <tr>
-            <th className="px-4 py-3">Persona</th>
-            <th className="px-4 py-3">DNI</th>
-            <th className="px-4 py-3">Contacto</th>
-            {kind === 'employees' ? <th className="px-4 py-3">Usuario</th> : null}
-            <th className="px-4 py-3">Estado</th>
-            <th className="px-4 py-3 text-right">Acciones</th>
+            <th className="px-4 py-3 font-bold">Persona</th>
+            <th className="px-4 py-3 font-bold">DNI</th>
+            <th className="px-4 py-3 font-bold">Contacto</th>
+            {kind === 'employees' ? <th className="px-4 py-3 font-bold">Usuario</th> : null}
+            <th className="px-4 py-3 font-bold">Estado</th>
+            <th className="px-4 py-3 text-right font-bold">Acciones</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#E2E8F0]">
           {items.map((item) => (
-            <tr key={item.id}>
-              <td className="px-4 py-3 font-medium">{item.firstName} {item.lastName}</td>
-              <td className="px-4 py-3 text-slate-600">{item.dni ?? '-'}</td>
-              <td className="px-4 py-3 text-slate-600">{item.phone ?? item.email ?? '-'}</td>
-              {kind === 'employees' ? <td className="px-4 py-3 text-slate-600">{(item as Employee).hasUser ? 'Asignado' : 'Sin usuario'}</td> : null}
+            <tr className="transition hover:bg-[#F8FAFC]" key={item.id}>
+              <td className="px-4 py-3 font-medium text-[#0F172A]">{item.firstName} {item.lastName}</td>
+              <td className="px-4 py-3 text-[#334155]">{item.dni ?? '-'}</td>
+              <td className="px-4 py-3 text-[#334155]">{item.phone ?? item.email ?? '-'}</td>
+              {kind === 'employees' ? <td className="px-4 py-3 text-[#334155]">{(item as Employee).hasUser ? 'Asignado' : 'Sin usuario'}</td> : null}
               <td className="px-4 py-3">{activeBadge(item.isActive)}</td>
               <td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td>
             </tr>
