@@ -19,8 +19,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(_ =>
+{
+    var timeZoneId = builder.Configuration["Club:TimeZone"] ?? "America/Argentina/Buenos_Aires";
+    return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+});
 
 builder.Services.AddCors(options =>
 {
