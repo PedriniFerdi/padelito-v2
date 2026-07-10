@@ -219,7 +219,9 @@ public sealed class PadelitoDbContext(DbContextOptions<PadelitoDbContext> option
             entity.Property(x => x.BasePrice).HasColumnType("decimal(10,2)");
             entity.Property(x => x.FinalPrice).HasColumnType("decimal(10,2)");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime2");
-            entity.HasIndex(x => new { x.ReservationDate, x.AvailableTurnId }).IsUnique();
+            entity.HasIndex(x => new { x.ReservationDate, x.AvailableTurnId })
+                .IsUnique()
+                .HasFilter("[ReservationStatusId] <> 3");
             entity.HasOne(x => x.Client)
                 .WithMany(x => x.Reservations)
                 .HasForeignKey(x => x.ClientId)

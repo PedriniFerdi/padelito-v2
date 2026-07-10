@@ -91,8 +91,8 @@ export function AppLayout() {
         <section className="flex min-w-0 flex-1 flex-col gap-4">
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E2E8F0] bg-white px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
             <div>
-              <span className="inline-flex rounded-lg bg-[#EEF2FF] px-2.5 py-1 text-xs font-extrabold uppercase text-[#2563EB] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">Etapa 3</span>
-              <h2 className="mt-2 text-lg font-bold tracking-tight text-[#0F172A]">Catalogos operativos</h2>
+              <span className="inline-flex rounded-lg bg-[#ECFDF5] px-2.5 py-1 text-xs font-extrabold uppercase text-[#0F766E] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">Etapa 4</span>
+              <h2 className="mt-2 text-lg font-bold tracking-tight text-[#0F172A]">Reservas</h2>
             </div>
             <div className="flex items-stretch overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
               <div className="flex min-w-0 items-center gap-3 px-3 py-2">
