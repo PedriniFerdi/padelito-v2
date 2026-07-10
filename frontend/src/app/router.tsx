@@ -5,17 +5,13 @@ import { PublicOnlyRoute } from '@/features/auth/PublicOnlyRoute'
 import { ClientsPage, CourtsPage, EmployeesPage, PromotionsPage, TurnsPage, UsersPage } from '@/pages/CatalogPages'
 import { LoginPage } from '@/pages/LoginPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
+import { ReservationsPage } from '@/pages/ReservationsPage'
 
 const pages = [
   {
     path: 'dashboard',
     title: 'Dashboard',
     description: 'Resumen operativo inicial. Las metricas reales llegan en la etapa de pagos y dashboard.',
-  },
-  {
-    path: 'reservations',
-    title: 'Reservas',
-    description: 'Nucleo funcional del MVP. En esta etapa queda protegido y listo para implementar.',
   },
   {
     path: 'payments',
@@ -45,6 +41,7 @@ export function AppRouter() {
           <Route element={<CourtsPage />} path="courts" />
           <Route element={<TurnsPage />} path="turns" />
           <Route element={<PromotionsPage />} path="promotions" />
+          <Route element={<ReservationsPage />} path="reservations" />
           {pages.map((page) => (
             <Route
               element={<PlaceholderPage description={page.description} title={page.title} />}
