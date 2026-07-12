@@ -146,3 +146,22 @@ export type Payment = {
   totalPaid: number
   pendingBalance: number
 }
+
+export type DashboardReservation = {
+  id: number
+  reservationDate: string
+  clientName: string
+  courtName: string
+  startTime: string
+  status: ReservationStatus
+  finalPrice: number
+}
+
+export type DashboardSummary = {
+  operationalDate: string
+  activeClients: number
+  activeCourts: number
+  reservationsToday: number
+  incomeToday: number
+  latestReservations: DashboardReservation[]
+}

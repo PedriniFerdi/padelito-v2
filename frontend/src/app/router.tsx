@@ -6,14 +6,10 @@ import { ClientsPage, CourtsPage, EmployeesPage, PromotionsPage, TurnsPage, User
 import { LoginPage } from '@/pages/LoginPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 import { ReservationsPage } from '@/pages/ReservationsPage'
+import { DashboardPage } from '@/pages/DashboardPage'
 import { PaymentsPage } from '@/pages/PaymentsPage'
 
 const pages = [
-  {
-    path: 'dashboard',
-    title: 'Dashboard',
-    description: 'Resumen operativo inicial. Las metricas reales llegan en la etapa de pagos y dashboard.',
-  },
   {
     path: 'reports',
     title: 'Reportes',
@@ -38,6 +34,7 @@ export function AppRouter() {
           <Route element={<TurnsPage />} path="turns" />
           <Route element={<PromotionsPage />} path="promotions" />
           <Route element={<ReservationsPage />} path="reservations" />
+          <Route element={<DashboardPage />} path="dashboard" />
           <Route element={<PaymentsPage />} path="payments" />
           {pages.map((page) => (
             <Route
