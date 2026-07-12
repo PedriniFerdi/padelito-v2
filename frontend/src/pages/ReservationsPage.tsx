@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarCheck, Check, CircleX, Flag, Plus, X } from 'lucide-react'
+import { CalendarCheck, Check, CircleX, CreditCard, Flag, Plus, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { ApiRequestError } from '@/api/http'
 import {
   reservationsApi,
@@ -279,9 +280,12 @@ function ReservationsTable({ items, isChanging, onChangeStatus }: { items: Reser
 }
 
 function StatusActions({ item, disabled, onChange }: { item: Reservation; disabled: boolean; onChange: (id: number, statusId: number) => void }) {
-  if (item.status === 'Pendiente') return <div className="flex justify-end gap-2"><ActionButton icon={Check} label="Confirmar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Confirmada)} /><ActionButton destructive icon={CircleX} label="Cancelar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Cancelada)} /></div>
-  if (item.status === 'Confirmada') return <div className="flex justify-end gap-2"><ActionButton icon={Flag} label="Finalizar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Finalizada)} /><ActionButton destructive icon={CircleX} label="Cancelar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Cancelada)} /></div>
-  return <p className="text-right text-xs font-medium text-[#94A3B8]">Sin acciones</p>
+  return <div className="flex justify-end gap-2">
+    {item.status !== 'Cancelada' && <Link className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#C4B5FD] px-2.5 py-2 text-xs font-bold text-[#6D28D9] hover:bg-[#F5F3FF]" to={`/payments?reservationId=${item.id}`}><CreditCard className="size-3.5"/>Cobrar</Link>}
+    {item.status === 'Pendiente' && <ActionButton icon={Check} label="Confirmar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Confirmada)} />}
+    {item.status === 'Confirmada' && <ActionButton icon={Flag} label="Finalizar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Finalizada)} />}
+    {(item.status === 'Pendiente' || item.status === 'Confirmada') && <ActionButton destructive icon={CircleX} label="Cancelar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Cancelada)} />}
+  </div>
 }
 
 function ActionButton({ icon: Icon, label, onClick, disabled, destructive = false }: { icon: typeof Check; label: string; onClick: () => void; disabled: boolean; destructive?: boolean }) {
