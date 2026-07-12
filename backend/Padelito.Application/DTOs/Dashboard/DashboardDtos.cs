@@ -16,4 +16,3 @@ public sealed record DashboardSummaryDto(
     int ReservationsToday,
     decimal IncomeToday,
     IReadOnlyList<DashboardReservationDto> LatestReservations);
-

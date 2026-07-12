@@ -29,4 +29,3 @@ public sealed record PaymentListDto(
     decimal PendingBalance);
 
 public sealed record PaymentSummaryDto(decimal FinalPrice, decimal TotalPaid, decimal PendingBalance);
-

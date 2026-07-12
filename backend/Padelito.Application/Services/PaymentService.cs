@@ -58,4 +58,3 @@ public sealed class PaymentService(IPaymentRepository repository) : IPaymentServ
             Math.Max(0, payment.Reservation.FinalPrice - paid));
     }
 }
-

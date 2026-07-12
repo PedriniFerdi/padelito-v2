@@ -6,4 +6,3 @@ public interface IDashboardService
 {
     Task<DashboardSummaryDto> GetSummaryAsync(int clubId, CancellationToken cancellationToken);
 }
-

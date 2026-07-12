@@ -10,4 +10,3 @@ public interface IDashboardRepository
     Task<decimal> SumIncomeAsync(int clubId, DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken);
     Task<List<Reservation>> GetLatestReservationsAsync(int clubId, DateOnly date, int take, CancellationToken cancellationToken);
 }
-

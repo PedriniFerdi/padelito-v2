@@ -14,4 +14,3 @@ public sealed class DashboardController(IDashboardService dashboardService) : Ca
     public Task<ActionResult<DashboardSummaryDto>> Get(CancellationToken cancellationToken) =>
         HandleAsync(() => dashboardService.GetSummaryAsync(CurrentClubId, cancellationToken));
 }
-

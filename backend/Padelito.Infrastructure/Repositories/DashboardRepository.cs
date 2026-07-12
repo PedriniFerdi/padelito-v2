@@ -26,4 +26,3 @@ public sealed class DashboardRepository(PadelitoDbContext dbContext) : IDashboar
             .Where(x => x.AvailableTurn.Court.ClubId == clubId && x.ReservationDate == date)
             .AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(take).ToListAsync(cancellationToken);
 }
-

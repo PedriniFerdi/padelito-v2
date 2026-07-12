@@ -9,4 +9,3 @@ public interface IPaymentRepository
     Task<PaymentMethod?> GetMethodAsync(int id, CancellationToken cancellationToken);
     Task<Payment> AddPaymentAsync(int clubId, Payment payment, CancellationToken cancellationToken);
 }
-
