@@ -17,6 +17,7 @@ public interface ICatalogRepository
     Task AddUserAsync(User user, CancellationToken cancellationToken);
 
     Task<List<Role>> GetRolesAsync(CancellationToken cancellationToken);
+    Task<List<PaymentMethod>> GetPaymentMethodsAsync(CancellationToken cancellationToken);
     Task<Role?> GetRoleAsync(int id, CancellationToken cancellationToken);
     Task<bool> UsernameExistsAsync(string username, int? excludingUserId, CancellationToken cancellationToken);
     Task<bool> PersonDniExistsAsync(string dni, int? excludingPersonId, CancellationToken cancellationToken);

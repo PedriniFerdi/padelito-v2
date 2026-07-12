@@ -1,5 +1,7 @@
 namespace Padelito.Application.DTOs.Catalogs;
 
+public sealed record PaymentMethodDto(int Id, string Description);
+
 public sealed record ClientListDto(int Id, string FirstName, string LastName, string? Dni, string? Phone, string? Email, bool IsActive);
 public sealed record ClientDetailDto(int Id, string FirstName, string LastName, string? Dni, string? Phone, string? Email, bool IsActive);
 public sealed record ClientCreateDto(string FirstName, string LastName, string? Dni, string? Phone, string? Email);
