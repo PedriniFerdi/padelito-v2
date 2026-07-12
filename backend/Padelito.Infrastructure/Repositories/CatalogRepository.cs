@@ -7,6 +7,9 @@ namespace Padelito.Infrastructure.Repositories;
 
 public sealed class CatalogRepository(PadelitoDbContext dbContext) : ICatalogRepository
 {
+    public Task<List<PaymentMethod>> GetPaymentMethodsAsync(CancellationToken cancellationToken) =>
+        dbContext.PaymentMethods.AsNoTracking().OrderBy(x => x.Description).ToListAsync(cancellationToken);
+
     public Task<List<Client>> GetClientsAsync(CancellationToken cancellationToken)
     {
         return dbContext.Clients.Include(x => x.Person).AsNoTracking().OrderBy(x => x.Person.LastName).ThenBy(x => x.Person.FirstName).ToListAsync(cancellationToken);

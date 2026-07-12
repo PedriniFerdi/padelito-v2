@@ -20,6 +20,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICatalogRepository, CatalogRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IDashboardRepository, DashboardRepository>();
 
         return services;
     }

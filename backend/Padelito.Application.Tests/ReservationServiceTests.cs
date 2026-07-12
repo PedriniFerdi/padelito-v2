@@ -158,6 +158,17 @@ public sealed class ReservationServiceTests
     }
 
     [Fact]
+    public async Task ChangeStatus_blocks_cancellation_when_reservation_has_payments()
+    {
+        var fixture = CreateFixture();
+        var reservation = ReservationForStatus(ReservationStatusIds.Confirmed);
+        reservation.Payments.Add(new Payment { Id = 1, ReservationId = reservation.Id, Amount = 50 });
+        fixture.Repository.Reservations.Add(reservation);
+        await Assert.ThrowsAsync<BusinessException>(() => fixture.Service.ChangeStatusAsync(
+            reservation.Id, 1, "admin", new(ReservationStatusIds.Cancelled), default));
+    }
+
+    [Fact]
     public async Task Create_and_status_change_write_audit_with_username()
     {
         var fixture = CreateFixture();
@@ -255,6 +266,9 @@ internal sealed class FakeReservationRepository : IReservationRepository
     public Task<ReservationStatus?> GetStatusAsync(int id, CancellationToken cancellationToken) => Task.FromResult(Statuses.GetValueOrDefault(id));
     public Task<bool> IsOccupiedAsync(DateOnly date, int availableTurnId, CancellationToken cancellationToken) =>
         Task.FromResult(Reservations.Any(x => x.ReservationDate == date && x.AvailableTurnId == availableTurnId && x.ReservationStatusId != 3));
+
+    public Task<bool> HasPaymentsAsync(int reservationId, CancellationToken cancellationToken) =>
+        Task.FromResult(Reservations.FirstOrDefault(x => x.Id == reservationId)?.Payments.Count > 0);
 
     public Task AddAsync(Reservation reservation, CancellationToken cancellationToken)
     {

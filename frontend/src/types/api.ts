@@ -114,6 +114,9 @@ export type ReservationDetail = Reservation & {
   employeeName: string
   promotionId?: number | null
   discountPercentage?: number | null
+  totalPaid: number
+  pendingBalance: number
+  paymentStatus: 'Sin pagos' | 'Pago parcial' | 'Pagada'
 }
 
 export type ReservationAvailability = {
@@ -124,4 +127,41 @@ export type ReservationAvailability = {
   startTime: string
   endTime: string
   basePrice: number
+}
+
+export type PaymentMethod = { id: number; description: string }
+
+export type Payment = {
+  id: number
+  reservationId: number
+  reservationDate: string
+  clientName: string
+  courtName: string
+  paymentMethodId: number
+  paymentMethod: string
+  amount: number
+  paymentDate: string
+  note?: string | null
+  finalPrice: number
+  totalPaid: number
+  pendingBalance: number
+}
+
+export type DashboardReservation = {
+  id: number
+  reservationDate: string
+  clientName: string
+  courtName: string
+  startTime: string
+  status: ReservationStatus
+  finalPrice: number
+}
+
+export type DashboardSummary = {
+  operationalDate: string
+  activeClients: number
+  activeCourts: number
+  reservationsToday: number
+  incomeToday: number
+  latestReservations: DashboardReservation[]
 }

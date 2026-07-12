@@ -9,6 +9,9 @@ namespace Padelito.Application.Services;
 
 public sealed class CatalogService(ICatalogRepository repository, IPasswordHasher<User> passwordHasher) : ICatalogService
 {
+    public async Task<IReadOnlyList<PaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken cancellationToken) =>
+        (await repository.GetPaymentMethodsAsync(cancellationToken)).Select(x => new PaymentMethodDto(x.Id, x.Description)).ToList();
+
     public async Task<IReadOnlyList<ClientListDto>> GetClientsAsync(CancellationToken cancellationToken)
     {
         return (await repository.GetClientsAsync(cancellationToken)).Select(ToClientListDto).ToList();

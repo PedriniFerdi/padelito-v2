@@ -42,6 +42,9 @@ public sealed record ReservationDetailDto(
     string Status,
     decimal BasePrice,
     decimal FinalPrice,
+    decimal TotalPaid,
+    decimal PendingBalance,
+    string PaymentStatus,
     DateTime CreatedAt);
 
 public sealed record ReservationAvailabilityDto(
