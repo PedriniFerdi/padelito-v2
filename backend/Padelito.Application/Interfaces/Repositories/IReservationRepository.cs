@@ -20,6 +20,7 @@ public interface IReservationRepository
     Task<Promotion?> GetPromotionAsync(int id, CancellationToken cancellationToken);
     Task<ReservationStatus?> GetStatusAsync(int id, CancellationToken cancellationToken);
     Task<bool> IsOccupiedAsync(DateOnly date, int availableTurnId, CancellationToken cancellationToken);
+    Task<bool> HasPaymentsAsync(int reservationId, CancellationToken cancellationToken);
     Task AddAsync(Reservation reservation, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

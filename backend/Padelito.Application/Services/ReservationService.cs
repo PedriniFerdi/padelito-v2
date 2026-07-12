@@ -177,6 +177,11 @@ public sealed class ReservationService(
             throw new BusinessException("El cambio de estado solicitado no está permitido.");
         }
 
+        if (request.ReservationStatusId == ReservationStatusIds.Cancelled && await repository.HasPaymentsAsync(id, cancellationToken))
+        {
+            throw new BusinessException("No se puede cancelar una reserva que tiene pagos registrados.");
+        }
+
         var newStatus = await repository.GetStatusAsync(request.ReservationStatusId, cancellationToken)
             ?? throw new BusinessException("El estado indicado no existe.");
         var previousStatus = reservation.ReservationStatus.Name;
@@ -266,6 +271,9 @@ public sealed class ReservationService(
 
     private static ReservationDetailDto ToDetailDto(Reservation reservation)
     {
+        var totalPaid = reservation.Payments.Sum(x => x.Amount);
+        var pendingBalance = Math.Max(0, reservation.FinalPrice - totalPaid);
+        var paymentStatus = totalPaid <= 0 ? "Sin pagos" : pendingBalance > 0 ? "Pago parcial" : "Pagada";
         return new ReservationDetailDto(
             reservation.Id,
             reservation.ReservationDate,
@@ -286,6 +294,9 @@ public sealed class ReservationService(
             reservation.ReservationStatus.Name,
             reservation.BasePrice,
             reservation.FinalPrice,
+            totalPaid,
+            pendingBalance,
+            paymentStatus,
             reservation.CreatedAt);
     }
 

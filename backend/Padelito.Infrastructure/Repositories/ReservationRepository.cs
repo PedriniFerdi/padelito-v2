@@ -51,6 +51,9 @@ public sealed class ReservationRepository(PadelitoDbContext dbContext) : IReserv
         dbContext.Reservations.AnyAsync(x => x.ReservationDate == date && x.AvailableTurnId == availableTurnId
             && x.ReservationStatusId != ReservationStatusIds.Cancelled, cancellationToken);
 
+    public Task<bool> HasPaymentsAsync(int reservationId, CancellationToken cancellationToken) =>
+        dbContext.Payments.AnyAsync(x => x.ReservationId == reservationId, cancellationToken);
+
     public async Task AddAsync(Reservation reservation, CancellationToken cancellationToken) =>
         await dbContext.Reservations.AddAsync(reservation, cancellationToken);
 
@@ -72,7 +75,7 @@ public sealed class ReservationRepository(PadelitoDbContext dbContext) : IReserv
             .Include(x => x.Client).ThenInclude(x => x.Person)
             .Include(x => x.AvailableTurn).ThenInclude(x => x.Court).ThenInclude(x => x.CourtType)
             .Include(x => x.Employee).ThenInclude(x => x.Person)
-            .Include(x => x.Promotion).Include(x => x.ReservationStatus).AsQueryable();
+            .Include(x => x.Promotion).Include(x => x.ReservationStatus).Include(x => x.Payments).AsQueryable();
         return trackChanges ? query : query.AsNoTracking();
     }
 }
