@@ -165,3 +165,37 @@ export type DashboardSummary = {
   incomeToday: number
   latestReservations: DashboardReservation[]
 }
+
+export type ReservationReportRow = {
+  reservationId: number
+  reservationDate: string
+  startTime: string
+  endTime: string
+  clientName: string
+  courtName: string
+  reservationStatusId: number
+  status: ReservationStatus
+  promotionName?: string | null
+  basePrice: number
+  finalPrice: number
+  totalPaid: number
+  pendingBalance: number
+  paymentStatus: 'Sin pagos' | 'Pago parcial' | 'Pagada'
+}
+
+export type ReservationReport = {
+  summary: { reservationCount: number; finalPriceTotal: number; totalPaid: number; pendingBalance: number }
+  rows: ReservationReportRow[]
+}
+
+export type ReservationAudit = {
+  id: number
+  reservationId: number
+  reservationDate: string
+  clientName: string
+  courtName: string
+  action: string
+  description: string
+  username: string
+  createdAt: string
+}

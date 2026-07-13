@@ -49,6 +49,18 @@ export async function apiFetch<TResponse>(
   return (await response.json()) as TResponse
 }
 
+export async function apiDownload(path: string): Promise<Blob> {
+  const token = getAuthToken?.()
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!response.ok) {
+    if (response.status === 401) handleUnauthorized?.()
+    throw new ApiRequestError(await getErrorMessage(response), response.status)
+  }
+  return response.blob()
+}
+
 async function getErrorMessage(response: Response) {
   const fallback = `La API respondio con estado ${response.status}.`
 

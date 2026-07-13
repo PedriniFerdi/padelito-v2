@@ -4,18 +4,12 @@ import { ProtectedRoute } from '@/features/auth/ProtectedRoute'
 import { PublicOnlyRoute } from '@/features/auth/PublicOnlyRoute'
 import { ClientsPage, CourtsPage, EmployeesPage, PromotionsPage, TurnsPage, UsersPage } from '@/pages/CatalogPages'
 import { LoginPage } from '@/pages/LoginPage'
-import { PlaceholderPage } from '@/pages/PlaceholderPage'
 import { ReservationsPage } from '@/pages/ReservationsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { PaymentsPage } from '@/pages/PaymentsPage'
-
-const pages = [
-  {
-    path: 'reports',
-    title: 'Reportes',
-    description: 'Consultas operativas y reportes por fecha/estado cuando el flujo principal este completo.',
-  },
-]
+import { ReportsPage } from '@/pages/ReportsPage'
+import { AuditPage } from '@/pages/AuditPage'
+import { AdminRoute } from '@/features/auth/AdminRoute'
 
 export function AppRouter() {
   return (
@@ -36,13 +30,10 @@ export function AppRouter() {
           <Route element={<ReservationsPage />} path="reservations" />
           <Route element={<DashboardPage />} path="dashboard" />
           <Route element={<PaymentsPage />} path="payments" />
-          {pages.map((page) => (
-            <Route
-              element={<PlaceholderPage description={page.description} title={page.title} />}
-              key={page.path}
-              path={page.path}
-            />
-          ))}
+          <Route element={<ReportsPage />} path="reports" />
+          <Route element={<AdminRoute />}>
+            <Route element={<AuditPage />} path="audit" />
+          </Route>
         </Route>
       </Route>
 
