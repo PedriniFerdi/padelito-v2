@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CreditCard,
   FileText,
+  History,
   LayoutDashboard,
   LogOut,
   Percent,
@@ -12,7 +13,7 @@ import {
   UserSquare,
   type LucideIcon,
 } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthProvider'
 import type { Role } from '@/types/api'
 
@@ -36,15 +37,18 @@ const navItems: NavItem[] = [
   { label: 'Reservas', path: '/reservations', icon: BarChart3, roles: ['Administrador', 'Recepcion'] },
   { label: 'Pagos', path: '/payments', icon: CreditCard, roles: ['Administrador', 'Recepcion'] },
   { label: 'Reportes', path: '/reports', icon: FileText, roles: ['Administrador', 'Recepcion'] },
+  { label: 'Auditoría', path: '/audit', icon: History, roles: ['Administrador'] },
 ]
 
 export function AppLayout() {
   const { logout, user } = useAuth()
+  const location = useLocation()
   const visibleItems = navItems.filter((item) => user && item.roles.includes(user.role))
+  const currentItem = navItems.find(item => location.pathname.startsWith(item.path)) ?? navItems[0]
   const userInitial = user?.username?.charAt(0).toUpperCase() ?? 'A'
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] bg-[radial-gradient(circle_at_18%_12%,rgba(15,118,110,0.08),transparent_30%),radial-gradient(circle_at_76%_4%,rgba(124,58,237,0.08),transparent_26%),radial-gradient(circle_at_54%_52%,rgba(15,118,110,0.05),transparent_34%)] text-[#0F172A]">
+    <main className="min-h-[100dvh] bg-[#F8FAFC] bg-[radial-gradient(circle_at_18%_12%,rgba(15,118,110,0.08),transparent_30%)] text-[#0F172A]">
       <div className="mx-auto flex min-h-screen max-w-7xl gap-4 p-4">
         <aside className="hidden w-64 shrink-0 rounded-2xl border border-[#E2E8F0] bg-white/95 px-4 py-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] lg:flex lg:flex-col">
           <div className="mb-8 flex items-start gap-3 px-1">
@@ -91,12 +95,12 @@ export function AppLayout() {
         <section className="flex min-w-0 flex-1 flex-col gap-4">
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E2E8F0] bg-white px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
             <div>
-              <span className="inline-flex rounded-lg bg-[#ECFDF5] px-2.5 py-1 text-xs font-extrabold uppercase text-[#0F766E] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">Etapa 4</span>
-              <h2 className="mt-2 text-lg font-bold tracking-tight text-[#0F172A]">Reservas</h2>
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#0F766E]">Padelito</span>
+              <h2 className="mt-1 text-lg font-bold tracking-tight text-[#0F172A]">{currentItem.label}</h2>
             </div>
             <div className="flex items-stretch overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
               <div className="flex min-w-0 items-center gap-3 px-3 py-2">
-                <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#0F766E_0%,#7C3AED_100%)] text-sm font-bold text-white shadow-[0_10px_20px_rgba(15,118,110,0.2)]">
+                <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#0F766E] text-sm font-bold text-white shadow-[0_10px_20px_rgba(15,118,110,0.2)]">
                   {userInitial}
                 </div>
                 <div className="min-w-0 pr-2">
@@ -107,7 +111,7 @@ export function AppLayout() {
               <button
                 className="inline-flex w-12 items-center justify-center border-l border-[#E2E8F0] text-[#334155] transition hover:bg-[#F8FAFC] hover:text-[#0F172A]"
                 onClick={logout}
-                title="Cerrar sesion"
+                title="Cerrar sesión"
                 type="button"
               >
                 <LogOut aria-hidden="true" className="size-4" strokeWidth={1.9} />
