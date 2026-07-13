@@ -58,28 +58,28 @@ export function LoginPage() {
         return
       }
 
-      setFormError('No se pudo iniciar sesion. Revisá que la API esté corriendo.')
+      setFormError('No se pudo iniciar sesión. Revisá que la API esté corriendo.')
     }
   })
 
   return (
-    <main className="grid min-h-screen bg-slate-950 px-4 py-8 text-slate-950 md:grid-cols-[1fr_440px]">
-      <section className="hidden min-h-full flex-col justify-end rounded-lg bg-[linear-gradient(135deg,#064e3b,#0f766e_45%,#1e293b)] p-10 text-white md:flex">
+    <main className="grid min-h-[100dvh] bg-slate-950 px-4 py-8 text-slate-950 md:grid-cols-[1fr_440px]">
+      <section className="hidden min-h-full flex-col justify-end rounded-2xl bg-[linear-gradient(135deg,#064e3b,#0f766e_50%,#1e293b)] p-10 text-white md:flex">
         <p className="text-sm font-medium text-emerald-100">Padelito v2</p>
         <h1 className="mt-3 max-w-xl text-4xl font-semibold">Backoffice interno para operar el club.</h1>
         <p className="mt-4 max-w-lg text-base text-emerald-50">
-          Seguridad JWT, roles y navegación privada listos para construir reservas, pagos y reportes.
+          Reservas, pagos, reportes y auditoría conectados en una operación segura y trazable.
         </p>
       </section>
 
       <section className="flex items-center justify-center md:px-8">
         <form
-          className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
+          className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
           onSubmit={onSubmit}
         >
           <div>
             <p className="text-sm font-medium text-emerald-700">Padelito v2</p>
-            <h2 className="mt-2 text-2xl font-semibold">Iniciar sesion</h2>
+            <h2 className="mt-2 text-2xl font-semibold">Iniciar sesión</h2>
             <p className="mt-2 text-sm text-slate-500">Acceso para staff del club.</p>
           </div>
 

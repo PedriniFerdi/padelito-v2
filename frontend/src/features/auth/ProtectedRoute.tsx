@@ -8,7 +8,7 @@ export function ProtectedRoute() {
   if (auth.isLoading) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-50 text-sm font-medium text-slate-600">
-        Cargando sesion...
+        Cargando sesión...
       </main>
     )
   }

@@ -103,6 +103,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// oxlint-disable-next-line react/only-export-components -- El hook comparte el contexto privado del provider.
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {
