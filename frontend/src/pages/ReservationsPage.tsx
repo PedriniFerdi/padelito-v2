@@ -10,6 +10,7 @@ import {
 } from '@/api/reservations.api'
 import { clientsApi, promotionsApi } from '@/api/catalogs.api'
 import type { Promotion, Reservation, ReservationAvailability, ReservationStatus } from '@/types/api'
+import { reservationSchema, toFieldErrors, type FieldErrors } from '@/lib/validation'
 
 const statusIds = {
   Pendiente: 1,
@@ -149,6 +150,7 @@ function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; o
   const [promotionId, setPromotionId] = useState('')
   const [initialStatusId, setInitialStatusId] = useState(String(statusIds.Pendiente))
   const [formError, setFormError] = useState<string>()
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
   const clients = useQuery({ queryKey: ['clients'], queryFn: clientsApi.list })
   const promotions = useQuery({ queryKey: ['promotions'], queryFn: promotionsApi.list })
@@ -180,13 +182,19 @@ function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; o
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
     setFormError(undefined)
-    create.mutate({
+    const parsed = reservationSchema.safeParse({
       clientId: Number(clientId),
       availableTurnId: Number(turnId),
       promotionId: promotionId ? Number(promotionId) : null,
       reservationDate: date,
       reservationStatusId: Number(initialStatusId),
     })
+    if (!parsed.success) {
+      setFieldErrors(toFieldErrors(parsed.error))
+      return
+    }
+    setFieldErrors({})
+    create.mutate(parsed.data)
   }
 
   return (
@@ -203,16 +211,16 @@ function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; o
 
       <form className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_280px]" onSubmit={submit}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Fecha">
+          <Field error={fieldErrors.reservationDate} label="Fecha">
             <input className={inputClass} min={today} onChange={(event) => setDate(event.target.value)} required type="date" value={date} />
           </Field>
-          <Field label="Cliente">
+          <Field error={fieldErrors.clientId} label="Cliente">
             <select className={inputClass} disabled={clients.isLoading} onChange={(event) => setClientId(event.target.value)} required value={clientId}>
               <option value="">Seleccionar cliente</option>
               {(clients.data ?? []).filter((client) => client.isActive).map((client) => <option key={client.id} value={client.id}>{client.lastName}, {client.firstName}</option>)}
             </select>
           </Field>
-          <Field label="Cancha y horario">
+          <Field error={fieldErrors.availableTurnId} label="Cancha y horario">
             <select className={inputClass} disabled={availability.isLoading || availability.isError} onChange={(event) => setTurnId(event.target.value)} required value={turnId}>
               <option value="">{availability.isLoading ? 'Buscando turnos...' : 'Seleccionar turno'}</option>
               {(availability.data ?? []).map((turn) => <option key={turn.availableTurnId} value={turn.availableTurnId}>{turn.startTime.slice(0, 5)} - {turn.endTime.slice(0, 5)} | {turn.courtName} ({money.format(turn.basePrice)})</option>)}
@@ -220,13 +228,13 @@ function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; o
             {availability.isSuccess && availability.data.length === 0 ? <p className="text-xs font-medium text-[#B45309]">No hay turnos disponibles para esta fecha.</p> : null}
             {availability.isError ? <p className="text-xs font-medium text-[#B91C1C]">{errorMessage(availability.error)}</p> : null}
           </Field>
-          <Field label="Promoción">
+          <Field error={fieldErrors.promotionId} label="Promoción">
             <select className={inputClass} onChange={(event) => setPromotionId(event.target.value)} value={promotionId}>
               <option value="">Sin promoción</option>
               {eligiblePromotions.map((promotion) => <option key={promotion.id} value={promotion.id}>{promotion.name} ({promotion.discountPercentage}%)</option>)}
             </select>
           </Field>
-          <Field label="Estado inicial">
+          <Field error={fieldErrors.reservationStatusId} label="Estado inicial">
             <select className={inputClass} onChange={(event) => setInitialStatusId(event.target.value)} value={initialStatusId}>
               <option value={statusIds.Pendiente}>Pendiente</option>
               <option value={statusIds.Confirmada}>Confirmada</option>
@@ -306,8 +314,8 @@ function Tab({ active, label, onClick }: { active: boolean; label: string; onCli
   return <button aria-selected={active} className={`border-b-2 px-4 pb-3 pt-1 text-sm font-bold transition ${active ? 'border-[#0F766E] text-[#0F766E]' : 'border-transparent text-[#64748B] hover:text-[#334155]'}`} onClick={onClick} role="tab" type="button">{label}</button>
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="grid gap-2 text-sm font-bold text-[#334155]"><span>{label}</span>{children}</label>
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
+  return <label className="grid gap-2 text-sm font-bold text-[#334155]"><span>{label}</span>{children}{error ? <span className="text-xs font-medium text-[#B91C1C]" role="alert">{error}</span> : null}</label>
 }
 
 function PriceRow({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
