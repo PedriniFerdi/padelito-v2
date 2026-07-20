@@ -61,7 +61,7 @@ internal sealed class FakePaymentRepository : IPaymentRepository
 
     public FakePaymentRepository()
     {
-        var person = new Person { Id = 1, FirstName = "Ana", LastName = "Paz", IsActive = true };
+        var person = new Person { Id = 1, FirstName = "Ana", LastName = "Paz", Dni = "30111222", Phone = "1140001001", Email = "ana@example.com", IsActive = true };
         var client = new Client { Id = 1, PersonId = 1, Person = person };
         var court = new Court { Id = 1, ClubId = 1, CourtTypeId = 1, Name = "Central", IsActive = true };
         Reservation = new Reservation { Id = 1, ClientId = 1, Client = client, AvailableTurnId = 1,
