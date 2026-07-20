@@ -217,7 +217,7 @@ public sealed class ReservationServiceTests
         new(1, 1, promotionId, date ?? new DateOnly(2026, 7, 10), statusId);
 
     private static Person Person(int id, string firstName, string lastName) =>
-        new() { Id = id, FirstName = firstName, LastName = lastName, IsActive = true, CreatedAt = Now.UtcDateTime };
+        new() { Id = id, FirstName = firstName, LastName = lastName, Dni = $"30{id:000000}", Phone = "1140001001", Email = $"persona{id}@example.com", IsActive = true, CreatedAt = Now.UtcDateTime };
 
     private static Reservation ReservationForStatus(int statusId, int id = 10)
     {
