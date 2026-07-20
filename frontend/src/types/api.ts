@@ -28,9 +28,9 @@ export type PersonCatalogItem = {
   id: number
   firstName: string
   lastName: string
-  dni?: string | null
-  phone?: string | null
-  email?: string | null
+  dni: string
+  phone: string
+  email: string
   isActive: boolean
 }
 

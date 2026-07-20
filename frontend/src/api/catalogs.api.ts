@@ -13,9 +13,9 @@ import type {
 export type PersonPayload = {
   firstName: string
   lastName: string
-  dni?: string | null
-  phone?: string | null
-  email?: string | null
+  dni: string
+  phone: string
+  email: string
 }
 
 export type UserCreatePayload = {

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Padelito.Application.DTOs.Payments;
 
 public sealed record PaymentFilterDto(
@@ -7,11 +9,11 @@ public sealed record PaymentFilterDto(
     int? ReservationId = null);
 
 public sealed record PaymentCreateDto(
-    int ReservationId,
-    int PaymentMethodId,
-    decimal Amount,
+    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar una reserva.")] int ReservationId,
+    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un metodo de pago.")] int PaymentMethodId,
+    [Range(0.01, 99999999.99, ErrorMessage = "El monto debe ser mayor a cero.")] decimal Amount,
     DateTime PaymentDate,
-    string? Note);
+    [StringLength(255, ErrorMessage = "La nota no puede superar los 255 caracteres.")] string? Note);
 
 public sealed record PaymentListDto(
     int Id,

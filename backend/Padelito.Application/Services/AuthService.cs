@@ -15,11 +15,12 @@ public sealed class AuthService(
 {
     public async Task<AuthResponseDto?> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken)
     {
-        var username = request.Username.Trim();
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(request.Password))
+        if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Length > 50 || string.IsNullOrWhiteSpace(request.Password))
         {
             return null;
         }
+
+        var username = request.Username.Trim();
 
         var user = await userRepository.GetByUsernameWithDetailsAsync(username, cancellationToken);
         if (user is null || !user.IsActive)

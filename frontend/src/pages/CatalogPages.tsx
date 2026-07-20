@@ -18,6 +18,18 @@ import {
   type UserUpdatePayload,
 } from '@/api/catalogs.api'
 import { ApiRequestError } from '@/api/http'
+import {
+  courtSchema,
+  courtTypeSchema,
+  passwordSchema,
+  personSchema,
+  promotionSchema,
+  toFieldErrors,
+  turnSchema,
+  userSchema,
+  userUpdateSchema,
+  type FieldErrors,
+} from '@/lib/validation'
 import type { AvailableTurn, Client, Court, CourtType, Employee, Promotion, RoleCatalog, UserCatalog } from '@/types/api'
 
 type StatusItem = { id: number; isActive: boolean }
@@ -81,6 +93,10 @@ function Panel({ children }: { children: ReactNode }) {
   return <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-[0_14px_35px_rgba(15,23,42,0.06)]">{children}</div>
 }
 
+function FormControl({ children, error, label, className = '' }: { children: ReactNode; error?: string; label: string; className?: string }) {
+  return <label className={`grid gap-1 text-sm font-medium text-slate-700 ${className}`}><span>{label}</span>{children}{error ? <span className="text-xs font-medium text-red-600" role="alert">{error}</span> : null}</label>
+}
+
 function ActionButton({ children, onClick, title }: { children: React.ReactNode; onClick: () => void; title: string }) {
   return (
     <button className="inline-flex size-8 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white text-[#334155] shadow-[0_6px_14px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-px hover:border-[#0F766E]/30 hover:bg-[#F8FAFC] hover:text-[#0F766E] active:translate-y-0" onClick={onClick} title={title} type="button">
@@ -126,6 +142,7 @@ function PersonForm({
   title: string
 }) {
   const [form, setForm] = useState<PersonPayload>(initial)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const update = (key: keyof PersonPayload, value: string) => setForm((current) => ({ ...current, [key]: value }))
 
   return (
@@ -133,15 +150,21 @@ function PersonForm({
       className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2"
       onSubmit={(event) => {
         event.preventDefault()
-        onSubmit(form)
+        const parsed = personSchema.safeParse(form)
+        if (!parsed.success) {
+          setFieldErrors(toFieldErrors(parsed.error))
+          return
+        }
+        setFieldErrors({})
+        onSubmit(parsed.data)
       }}
     >
       <h4 className="md:col-span-2 text-sm font-semibold text-slate-900">{title}</h4>
-      <input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => update('firstName', event.target.value)} placeholder="Nombre" value={form.firstName} />
-      <input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => update('lastName', event.target.value)} placeholder="Apellido" value={form.lastName} />
-      <input className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => update('dni', event.target.value)} placeholder="DNI" value={form.dni ?? ''} />
-      <input className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => update('phone', event.target.value)} placeholder="Telefono" value={form.phone ?? ''} />
-      <input className="rounded-md border border-slate-200 px-3 py-2 text-sm md:col-span-2" onChange={(event) => update('email', event.target.value)} placeholder="Email" type="email" value={form.email ?? ''} />
+      <FormControl error={fieldErrors.firstName} label="Nombre"><input aria-invalid={Boolean(fieldErrors.firstName)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={60} onChange={(event) => update('firstName', event.target.value)} value={form.firstName} /></FormControl>
+      <FormControl error={fieldErrors.lastName} label="Apellido"><input aria-invalid={Boolean(fieldErrors.lastName)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={60} onChange={(event) => update('lastName', event.target.value)} value={form.lastName} /></FormControl>
+      <FormControl error={fieldErrors.dni} label="DNI"><input aria-invalid={Boolean(fieldErrors.dni)} inputMode="numeric" required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={10} onChange={(event) => update('dni', event.target.value)} value={form.dni} /></FormControl>
+      <FormControl error={fieldErrors.phone} label="Teléfono"><input aria-invalid={Boolean(fieldErrors.phone)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={40} onChange={(event) => update('phone', event.target.value)} type="tel" value={form.phone} /></FormControl>
+      <FormControl className="md:col-span-2" error={fieldErrors.email} label="Email"><input aria-invalid={Boolean(fieldErrors.email)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={120} onChange={(event) => update('email', event.target.value)} type="email" value={form.email} /></FormControl>
       {error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}
       <div className="flex justify-end gap-2 md:col-span-2">
         <button className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium" onClick={onCancel} type="button">Cancelar</button>
@@ -293,14 +316,27 @@ function UserForm({ employees, error, initial, isSaving, onCancel, onSubmit, rol
   const [password, setPassword] = useState('')
   const [employeeId, setEmployeeId] = useState(initial?.employeeId ?? availableEmployees[0]?.id ?? 0)
   const [roleId, setRoleId] = useState(initial?.roleId ?? roles[0]?.id ?? 1)
+  const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault()
+    const values = initial ? { username, roleId } : { username, password, employeeId, roleId }
+    const parsed = (initial ? userUpdateSchema : userSchema).safeParse(values)
+    if (!parsed.success) {
+      setValidationErrors(toFieldErrors(parsed.error))
+      return
+    }
+    setValidationErrors({})
+    onSubmit(parsed.data)
+  }
 
   return (
-    <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(initial ? { username, roleId } : { username, password, employeeId, roleId }) }}>
+    <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2" onSubmit={submit}>
       <h4 className="md:col-span-2 text-sm font-semibold">{initial ? 'Editar usuario' : 'Nuevo usuario'}</h4>
-      <input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setUsername(event.target.value)} placeholder="Username" value={username} />
-      {!initial ? <input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setPassword(event.target.value)} placeholder="Password" type="password" value={password} /> : null}
-      {!initial ? <select className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEmployeeId(Number(event.target.value))} value={employeeId}>{availableEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select> : <p className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">{initial.employeeName}</p>}
-      <select className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setRoleId(Number(event.target.value))} value={roleId}>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select>
+      <FormControl error={validationErrors.username} label="Username"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={50} onChange={(event) => setUsername(event.target.value)} value={username} /></FormControl>
+      {!initial ? <FormControl error={validationErrors.password} label="Contraseña"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" minLength={8} maxLength={100} onChange={(event) => setPassword(event.target.value)} type="password" value={password} /></FormControl> : null}
+      {!initial ? <FormControl error={validationErrors.employeeId} label="Empleado"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEmployeeId(Number(event.target.value))} value={employeeId || ''}><option value="">Seleccionar empleado</option>{availableEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></FormControl> : <p className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">{initial.employeeName}</p>}
+      <FormControl error={validationErrors.roleId} label="Rol"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setRoleId(Number(event.target.value))} value={roleId || ''}><option value="">Seleccionar rol</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></FormControl>
       {error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}
       <div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div>
     </form>
@@ -309,7 +345,8 @@ function UserForm({ employees, error, initial, isSaving, onCancel, onSubmit, rol
 
 function PasswordForm({ error, isSaving, onCancel, onSubmit, username }: { error?: string; isSaving: boolean; onCancel: () => void; onSubmit: (password: string) => void; username: string }) {
   const [password, setPassword] = useState('')
-  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(password) }}><h4 className="md:col-span-2 text-sm font-semibold">Cambiar password de {username}</h4><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setPassword(event.target.value)} placeholder="Nueva password" type="password" value={password} />{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  const [validationError, setValidationError] = useState<string>()
+  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); const parsed = passwordSchema.safeParse(password); if (!parsed.success) { setValidationError(parsed.error.issues[0]?.message); return } setValidationError(undefined); onSubmit(parsed.data) }}><h4 className="md:col-span-2 text-sm font-semibold">Cambiar password de {username}</h4><FormControl error={validationError} label="Nueva contraseña"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" minLength={8} maxLength={100} onChange={(event) => setPassword(event.target.value)} type="password" value={password} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
 }
 
 function UsersTable({ items, onEdit, onPassword, onToggle }: { items: UserCatalog[]; onEdit: (item: UserCatalog) => void; onPassword: (item: UserCatalog) => void; onToggle: (item: UserCatalog) => void }) {
@@ -335,14 +372,16 @@ function CourtsManagementPage() {
 
 function CourtTypeForm({ error, initial, isSaving, onCancel, onSubmit }: { error?: string; initial: string; isSaving: boolean; onCancel: () => void; onSubmit: (description: string) => void }) {
   const [description, setDescription] = useState(initial)
-  return <form className="mb-3 flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); onSubmit(description) }}><input required className="min-w-64 rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDescription(event.target.value)} placeholder="Descripcion" value={description} /><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button>{error ? <p className="basis-full text-sm text-red-600">{error}</p> : null}</form>
+  const [validationError, setValidationError] = useState<string>()
+  return <form className="mb-3 flex flex-wrap items-start gap-2" onSubmit={(event) => { event.preventDefault(); const parsed = courtTypeSchema.safeParse(description); if (!parsed.success) { setValidationError(parsed.error.issues[0]?.message); return } setValidationError(undefined); onSubmit(parsed.data) }}><FormControl error={validationError} label="Descripción"><input required className="min-w-64 rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setDescription(event.target.value)} value={description} /></FormControl><button className="mt-6 rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button><button className="mt-6 rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button>{error ? <p className="basis-full text-sm text-red-600">{error}</p> : null}</form>
 }
 
 function CourtForm({ error, initial, isSaving, onCancel, onSubmit, types }: { error?: string; initial: Court | null; isSaving: boolean; onCancel: () => void; onSubmit: (payload: CourtPayload) => void; types: CourtType[] }) {
   const [name, setName] = useState(initial?.name ?? '')
   const [courtTypeId, setCourtTypeId] = useState(initial?.courtTypeId ?? types[0]?.id ?? 0)
   const [hourPrice, setHourPrice] = useState(String(initial?.hourPrice ?? ''))
-  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); onSubmit({ name, courtTypeId, hourPrice: Number(hourPrice) }) }}><h4 className="md:col-span-3 text-sm font-semibold">{initial ? 'Editar cancha' : 'Nueva cancha'}</h4><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setName(event.target.value)} placeholder="Nombre" value={name} /><select className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtTypeId(Number(event.target.value))} value={courtTypeId}>{types.map((type) => <option key={type.id} value={type.id}>{type.description}</option>)}</select><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" min="0" onChange={(event) => setHourPrice(event.target.value)} placeholder="Precio por hora" type="number" value={hourPrice} />{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
+  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); const parsed = courtSchema.safeParse({ name, courtTypeId, hourPrice: hourPrice === '' ? Number.NaN : Number(hourPrice) }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit(parsed.data) }}><h4 className="md:col-span-3 text-sm font-semibold">{initial ? 'Editar cancha' : 'Nueva cancha'}</h4><FormControl error={validationErrors.name} label="Nombre"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setName(event.target.value)} value={name} /></FormControl><FormControl error={validationErrors.courtTypeId} label="Tipo"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtTypeId(Number(event.target.value))} value={courtTypeId || ''}><option value="">Seleccionar tipo</option>{types.map((type) => <option key={type.id} value={type.id}>{type.description}</option>)}</select></FormControl><FormControl error={validationErrors.hourPrice} label="Precio por hora"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" min="0.01" step="0.01" onChange={(event) => setHourPrice(event.target.value)} type="number" value={hourPrice} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
 }
 
 function CourtsTable({ items, onEdit, onToggle }: { items: Court[]; onEdit: (item: Court) => void; onToggle: (item: Court) => void }) {
@@ -364,7 +403,8 @@ function TurnForm({ courts, error, initial, isSaving, onCancel, onSubmit }: { co
   const [courtId, setCourtId] = useState(initial?.courtId ?? courts[0]?.id ?? 0)
   const [startTime, setStartTime] = useState((initial?.startTime ?? '09:00').slice(0, 5))
   const [endTime, setEndTime] = useState((initial?.endTime ?? '10:00').slice(0, 5))
-  return <form className="grid gap-3 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); onSubmit({ courtId, startTime: `${startTime}:00`, endTime: `${endTime}:00` }) }}><select className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtId(Number(event.target.value))} value={courtId}>{courts.map((court) => <option key={court.id} value={court.id}>{court.name}</option>)}</select><input className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setStartTime(event.target.value)} type="time" value={startTime} /><input className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEndTime(event.target.value)} type="time" value={endTime} />{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
+  return <form className="grid gap-3 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); const parsed = turnSchema.safeParse({ courtId, startTime, endTime }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit({ courtId: parsed.data.courtId, startTime: `${parsed.data.startTime}:00`, endTime: `${parsed.data.endTime}:00` }) }}><FormControl error={validationErrors.courtId} label="Cancha"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtId(Number(event.target.value))} value={courtId || ''}><option value="">Seleccionar cancha</option>{courts.map((court) => <option key={court.id} value={court.id}>{court.name}</option>)}</select></FormControl><FormControl error={validationErrors.startTime} label="Hora de inicio"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setStartTime(event.target.value)} type="time" value={startTime} /></FormControl><FormControl error={validationErrors.endTime} label="Hora de fin"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEndTime(event.target.value)} type="time" value={endTime} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
 }
 
 function TurnsTable({ items, onEdit, onToggle }: { items: AvailableTurn[]; onEdit: (item: AvailableTurn) => void; onToggle: (item: AvailableTurn) => void }) {
@@ -387,7 +427,8 @@ function PromotionForm({ error, initial, isSaving, onCancel, onSubmit }: { error
   const [discountPercentage, setDiscountPercentage] = useState(String(initial?.discountPercentage ?? ''))
   const [dateFrom, setDateFrom] = useState(initial?.dateFrom ?? new Date().toISOString().slice(0, 10))
   const [dateTo, setDateTo] = useState(initial?.dateTo ?? new Date().toISOString().slice(0, 10))
-  return <form className="grid gap-3 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit({ name, description, discountPercentage: Number(discountPercentage), dateFrom, dateTo }) }}><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setName(event.target.value)} placeholder="Nombre" value={name} /><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" max="100" min="0" onChange={(event) => setDiscountPercentage(event.target.value)} placeholder="Descuento %" type="number" value={discountPercentage} /><input className="rounded-md border border-slate-200 px-3 py-2 text-sm md:col-span-2" onChange={(event) => setDescription(event.target.value)} placeholder="Descripcion" value={description} /><input className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} /><input className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} />{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
+  return <form className="grid gap-3 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); const parsed = promotionSchema.safeParse({ name, description, discountPercentage: discountPercentage === '' ? Number.NaN : Number(discountPercentage), dateFrom, dateTo }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit(parsed.data) }}><FormControl error={validationErrors.name} label="Nombre"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setName(event.target.value)} value={name} /></FormControl><FormControl error={validationErrors.discountPercentage} label="Descuento %"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" max="100" min="0.01" step="0.01" onChange={(event) => setDiscountPercentage(event.target.value)} type="number" value={discountPercentage} /></FormControl><FormControl className="md:col-span-2" error={validationErrors.description} label="Descripción (opcional)"><input className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={255} onChange={(event) => setDescription(event.target.value)} value={description} /></FormControl><FormControl error={validationErrors.dateFrom} label="Desde"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} /></FormControl><FormControl error={validationErrors.dateTo} label="Hasta"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
 }
 
 function PromotionsTable({ items, onEdit, onToggle }: { items: Promotion[]; onEdit: (item: Promotion) => void; onToggle: (item: Promotion) => void }) {
