@@ -48,7 +48,7 @@ public sealed class ReportServiceTests
     {
         var reservation = new Reservation
         {
-            Id = id, ClientId = id, Client = new Client { Id = id, PersonId = id, Person = new Person { Id = id, FirstName = firstName, LastName = "Paz" } },
+            Id = id, ClientId = id, Client = new Client { Id = id, PersonId = id, Person = new Person { Id = id, FirstName = firstName, LastName = "Paz", Dni = $"30{id:000000}", Phone = "1140001001", Email = $"persona{id}@example.com" } },
             AvailableTurnId = id, AvailableTurn = new AvailableTurn { Id = id, CourtId = id, Court = new Court { Id = id, ClubId = clubId, CourtTypeId = 1, Name = "Central", HourPrice = 100 }, StartTime = new(18,0), EndTime = new(19,0) },
             EmployeeId = 1, ReservationDate = new(2026,7,12), ReservationStatusId = 2, ReservationStatus = new ReservationStatus { Id = 2, Name = "Confirmada" },
             BasePrice = finalPrice, FinalPrice = finalPrice, CreatedAt = DateTime.UtcNow
