@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -10,8 +11,10 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Padelito.Application.DTOs.Auth;
 using Padelito.Application.DTOs.Audit;
+using Padelito.Application.DTOs.Catalogs;
 using Padelito.Application.DTOs.Payments;
 using Padelito.Application.DTOs.Reports;
 using Padelito.Application.DTOs.Reservations;
@@ -71,6 +74,68 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
         Assert.Equal("AdminOrReception", reportsPolicy);
         Assert.Equal("AdminOnly", auditPolicy);
     }
+
+    [Fact]
+    public async Task Client_and_employee_creation_reject_missing_or_invalid_person_fields()
+    {
+        using var client = await CreateAuthenticatedClientAsync();
+
+        var emptyClient = await client.PostAsJsonAsync("/api/clients", new
+        {
+            firstName = " ", lastName = "", dni = (string?)null, phone = (string?)null, email = (string?)null
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, emptyClient.StatusCode);
+        var emptyProblem = await emptyClient.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.Contains("FirstName", emptyProblem!.Errors.Keys);
+        Assert.Contains("Dni", emptyProblem.Errors.Keys);
+        Assert.Contains("Phone", emptyProblem.Errors.Keys);
+        Assert.Contains("Email", emptyProblem.Errors.Keys);
+
+        var invalidEmployee = await client.PostAsJsonAsync("/api/employees", new EmployeeCreateDto(
+            "Ana", "Paz", "12A", "abc", "correo-invalido"));
+        Assert.Equal(HttpStatusCode.BadRequest, invalidEmployee.StatusCode);
+    }
+
+    [Fact]
+    public async Task Client_creation_normalizes_valid_person_data_and_rejects_duplicate_dni()
+    {
+        using var client = await CreateAuthenticatedClientAsync();
+        var request = new ClientCreateDto("  Ana  ", "  Paz ", "40.123.456", "+54 11 4444-5555", " ANA@EXAMPLE.COM ");
+
+        var response = await client.PostAsJsonAsync("/api/clients", request);
+        response.EnsureSuccessStatusCode();
+        var created = await response.Content.ReadFromJsonAsync<ClientDetailDto>();
+        Assert.Equal("Ana", created!.FirstName);
+        Assert.Equal("40123456", created.Dni);
+        Assert.Equal("ana@example.com", created.Email);
+
+        var duplicate = await client.PostAsJsonAsync("/api/employees", new EmployeeCreateDto(
+            "Otra", "Persona", "40123456", "1144445555", "otra@example.com"));
+        Assert.Equal(HttpStatusCode.BadRequest, duplicate.StatusCode);
+    }
+
+    [Fact]
+    public async Task Other_creation_endpoints_reject_empty_or_default_payloads()
+    {
+        using var client = await CreateAuthenticatedClientAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/users", new UserCreateDto(" ", "short", 0, 0))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/courts", new CourtCreateDto(" ", 0, 0))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/available-turns", new AvailableTurnCreateDto(0, default, default))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/promotions", new PromotionCreateDto(" ", null, 0, default, default))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/reservations", new ReservationCreateDto(0, 0, null, default, 0))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(0, 0, 0, default, null))).StatusCode);
+    }
+
+    private async Task<HttpClient> CreateAuthenticatedClientAsync()
+    {
+        var client = factory.CreateClient();
+        var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto { Username = "admin", Password = "admin123" });
+        login.EnsureSuccessStatusCode();
+        var auth = await login.Content.ReadFromJsonAsync<AuthResponseDto>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.Token);
+        return client;
+    }
 }
 
 public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
@@ -80,6 +145,7 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<PadelitoDbContext>>();
