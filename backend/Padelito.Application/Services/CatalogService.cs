@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
 using Padelito.Application.Common;
 using Padelito.Application.DTOs.Catalogs;
@@ -103,11 +105,8 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task<UserDetailDto> CreateUserAsync(UserCreateDto request, CancellationToken cancellationToken)
     {
-        var username = RequireText(request.Username, "El username es obligatorio.");
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            throw new BusinessException("La password es obligatoria.");
-        }
+        var username = RequireText(request.Username, "El username es obligatorio.", 50);
+        ValidatePassword(request.Password);
 
         if (await repository.UsernameExistsAsync(username, null, cancellationToken))
         {
@@ -146,7 +145,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     public async Task<UserDetailDto> UpdateUserAsync(int id, UserUpdateDto request, CancellationToken cancellationToken)
     {
         var user = await RequireUserAsync(id, cancellationToken);
-        var username = RequireText(request.Username, "El username es obligatorio.");
+        var username = RequireText(request.Username, "El username es obligatorio.", 50);
         if (await repository.UsernameExistsAsync(username, id, cancellationToken))
         {
             throw new BusinessException("Ya existe un usuario con ese username.");
@@ -162,10 +161,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     public async Task ChangeUserPasswordAsync(int id, ChangePasswordDto request, CancellationToken cancellationToken)
     {
         var user = await RequireUserAsync(id, cancellationToken);
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            throw new BusinessException("La password es obligatoria.");
-        }
+        ValidatePassword(request.Password);
 
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
         await repository.SaveChangesAsync(cancellationToken);
@@ -195,7 +191,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task<CourtTypeDto> CreateCourtTypeAsync(CourtTypeCreateDto request, CancellationToken cancellationToken)
     {
-        var description = RequireText(request.Description, "La descripcion es obligatoria.");
+        var description = RequireText(request.Description, "La descripcion es obligatoria.", 80);
         if (await repository.CourtTypeExistsAsync(description, null, cancellationToken))
         {
             throw new BusinessException("Ya existe un tipo de cancha con esa descripcion.");
@@ -210,7 +206,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     public async Task<CourtTypeDto> UpdateCourtTypeAsync(int id, CourtTypeUpdateDto request, CancellationToken cancellationToken)
     {
         var courtType = await repository.GetCourtTypeAsync(id, cancellationToken) ?? throw new BusinessException("El tipo de cancha no existe.");
-        var description = RequireText(request.Description, "La descripcion es obligatoria.");
+        var description = RequireText(request.Description, "La descripcion es obligatoria.", 80);
         if (await repository.CourtTypeExistsAsync(description, id, cancellationToken))
         {
             throw new BusinessException("Ya existe un tipo de cancha con esa descripcion.");
@@ -334,7 +330,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var promotion = new Promotion
         {
             Name = request.Name.Trim(),
-            Description = NormalizeOptional(request.Description),
+            Description = NormalizeOptional(request.Description, 255),
             DiscountPercentage = request.DiscountPercentage,
             DateFrom = request.DateFrom,
             DateTo = request.DateTo,
@@ -350,7 +346,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var promotion = await RequirePromotionAsync(id, cancellationToken);
         ValidatePromotion(request.Name, request.DiscountPercentage, request.DateFrom, request.DateTo);
         promotion.Name = request.Name.Trim();
-        promotion.Description = NormalizeOptional(request.Description);
+        promotion.Description = NormalizeOptional(request.Description, 255);
         promotion.DiscountPercentage = request.DiscountPercentage;
         promotion.DateFrom = request.DateFrom;
         promotion.DateTo = request.DateTo;
@@ -392,8 +388,8 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private async Task ValidateDniAsync(string? dni, int? excludingPersonId, CancellationToken cancellationToken)
     {
-        var normalized = NormalizeOptional(dni);
-        if (normalized is not null && await repository.PersonDniExistsAsync(normalized, excludingPersonId, cancellationToken))
+        var normalized = NormalizeDni(dni);
+        if (await repository.PersonDniExistsAsync(normalized, excludingPersonId, cancellationToken))
         {
             throw new BusinessException("Ya existe una persona con ese DNI.");
         }
@@ -403,11 +399,11 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     {
         return new Person
         {
-            FirstName = RequireText(firstName, "El nombre es obligatorio."),
-            LastName = RequireText(lastName, "El apellido es obligatorio."),
-            Dni = NormalizeOptional(dni),
-            Phone = NormalizeOptional(phone),
-            Email = NormalizeOptional(email),
+            FirstName = RequireText(firstName, "El nombre es obligatorio.", 60),
+            LastName = RequireText(lastName, "El apellido es obligatorio.", 60),
+            Dni = NormalizeDni(dni),
+            Phone = NormalizePhone(phone),
+            Email = NormalizeEmail(email),
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -415,19 +411,19 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static void UpdatePerson(Person person, string firstName, string lastName, string? dni, string? phone, string? email)
     {
-        person.FirstName = RequireText(firstName, "El nombre es obligatorio.");
-        person.LastName = RequireText(lastName, "El apellido es obligatorio.");
-        person.Dni = NormalizeOptional(dni);
-        person.Phone = NormalizeOptional(phone);
-        person.Email = NormalizeOptional(email);
+        person.FirstName = RequireText(firstName, "El nombre es obligatorio.", 60);
+        person.LastName = RequireText(lastName, "El apellido es obligatorio.", 60);
+        person.Dni = NormalizeDni(dni);
+        person.Phone = NormalizePhone(phone);
+        person.Email = NormalizeEmail(email);
     }
 
     private static void ValidateCourt(string name, decimal hourPrice)
     {
-        _ = RequireText(name, "El nombre de la cancha es obligatorio.");
-        if (hourPrice < 0)
+        _ = RequireText(name, "El nombre de la cancha es obligatorio.", 80);
+        if (hourPrice <= 0)
         {
-            throw new BusinessException("El precio por hora no puede ser negativo.");
+            throw new BusinessException("El precio por hora debe ser mayor a cero.");
         }
     }
 
@@ -441,10 +437,15 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static void ValidatePromotion(string name, decimal discountPercentage, DateOnly dateFrom, DateOnly dateTo)
     {
-        _ = RequireText(name, "El nombre de la promocion es obligatorio.");
-        if (discountPercentage is < 0 or > 100)
+        _ = RequireText(name, "El nombre de la promocion es obligatorio.", 80);
+        if (discountPercentage is <= 0 or > 100)
         {
-            throw new BusinessException("El descuento debe estar entre 0 y 100.");
+            throw new BusinessException("El descuento debe ser mayor a cero y menor o igual a 100.");
+        }
+
+        if (dateFrom == default || dateTo == default)
+        {
+            throw new BusinessException("Las fechas de vigencia son obligatorias.");
         }
 
         if (dateTo < dateFrom)
@@ -453,14 +454,82 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         }
     }
 
-    private static string RequireText(string value, string message)
+    private static string RequireText(string? value, string message, int? maxLength = null)
     {
-        return string.IsNullOrWhiteSpace(value) ? throw new BusinessException(message) : value.Trim();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new BusinessException(message);
+        }
+
+        var normalized = value.Trim();
+        if (maxLength.HasValue && normalized.Length > maxLength.Value)
+        {
+            throw new BusinessException($"El campo no puede superar los {maxLength.Value} caracteres.");
+        }
+
+        return normalized;
     }
 
-    private static string? NormalizeOptional(string? value)
+    private static string NormalizeDni(string? value)
     {
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        var normalized = RequireText(value, "El DNI es obligatorio.").Replace(".", string.Empty).Replace(" ", string.Empty);
+        if (!Regex.IsMatch(normalized, @"^\d{7,8}$"))
+        {
+            throw new BusinessException("El DNI debe tener 7 u 8 digitos.");
+        }
+
+        return normalized;
+    }
+
+    private static string NormalizePhone(string? value)
+    {
+        var normalized = RequireText(value, "El telefono es obligatorio.", 40);
+        if (normalized.Length < 8 || !Regex.IsMatch(normalized, @"^\+?[0-9 ()-]+$") || normalized.Count(char.IsDigit) < 8)
+        {
+            throw new BusinessException("El telefono tiene un formato invalido.");
+        }
+
+        return normalized;
+    }
+
+    private static string NormalizeEmail(string? value)
+    {
+        var normalized = RequireText(value, "El email es obligatorio.", 120).ToLowerInvariant();
+        if (!new EmailAddressAttribute().IsValid(normalized))
+        {
+            throw new BusinessException("El email tiene un formato invalido.");
+        }
+
+        return normalized;
+    }
+
+    private static void ValidatePassword(string? password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new BusinessException("La password es obligatoria.");
+        }
+
+        if (password.Length is < 8 or > 100)
+        {
+            throw new BusinessException("La password debe tener entre 8 y 100 caracteres.");
+        }
+    }
+
+    private static string? NormalizeOptional(string? value, int? maxLength = null)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value.Trim();
+        if (maxLength.HasValue && normalized.Length > maxLength.Value)
+        {
+            throw new BusinessException($"El campo no puede superar los {maxLength.Value} caracteres.");
+        }
+
+        return normalized;
     }
 
     private static ClientListDto ToClientListDto(Client client)
