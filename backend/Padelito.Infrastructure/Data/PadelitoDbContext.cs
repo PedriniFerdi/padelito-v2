@@ -60,12 +60,21 @@ public sealed class PadelitoDbContext(DbContextOptions<PadelitoDbContext> option
     {
         modelBuilder.Entity<Person>(entity =>
         {
-            entity.ToTable("People");
+            entity.ToTable(
+                "People",
+                table =>
+                {
+                    table.HasCheckConstraint("CK_People_FirstName_NotBlank", "LEN(LTRIM(RTRIM([FirstName]))) > 0");
+                    table.HasCheckConstraint("CK_People_LastName_NotBlank", "LEN(LTRIM(RTRIM([LastName]))) > 0");
+                    table.HasCheckConstraint("CK_People_Dni_NotBlank", "LEN(LTRIM(RTRIM([Dni]))) > 0");
+                    table.HasCheckConstraint("CK_People_Phone_NotBlank", "LEN(LTRIM(RTRIM([Phone]))) > 0");
+                    table.HasCheckConstraint("CK_People_Email_NotBlank", "LEN(LTRIM(RTRIM([Email]))) > 0");
+                });
             entity.Property(x => x.FirstName).HasMaxLength(60).IsRequired();
             entity.Property(x => x.LastName).HasMaxLength(60).IsRequired();
-            entity.Property(x => x.Dni).HasMaxLength(20);
-            entity.Property(x => x.Phone).HasMaxLength(40);
-            entity.Property(x => x.Email).HasMaxLength(120);
+            entity.Property(x => x.Dni).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Phone).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(120).IsRequired();
             entity.Property(x => x.CreatedAt).HasColumnType("datetime2");
             entity.HasIndex(x => x.Dni).IsUnique().HasFilter("[Dni] IS NOT NULL");
         });
