@@ -213,6 +213,11 @@ public sealed class ReservationService(
 
     private void ValidateFutureDate(DateOnly date)
     {
+        if (date == default)
+        {
+            throw new BusinessException("La fecha de reserva es obligatoria.");
+        }
+
         if (date < DateOnly.FromDateTime(GetLocalNow()))
         {
             throw new BusinessException("No se puede crear una reserva para una fecha pasada.");
