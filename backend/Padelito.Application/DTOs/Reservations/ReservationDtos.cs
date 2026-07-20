@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Padelito.Application.DTOs.Reservations;
 
 public sealed record ReservationFilterDto(
@@ -57,10 +59,10 @@ public sealed record ReservationAvailabilityDto(
     decimal BasePrice);
 
 public sealed record ReservationCreateDto(
-    int ClientId,
-    int AvailableTurnId,
+    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un cliente.")] int ClientId,
+    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un turno.")] int AvailableTurnId,
     int? PromotionId,
     DateOnly ReservationDate,
-    int ReservationStatusId);
+    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un estado.")] int ReservationStatusId);
 
-public sealed record ReservationChangeStatusDto(int ReservationStatusId);
+public sealed record ReservationChangeStatusDto([Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un estado.")] int ReservationStatusId);
