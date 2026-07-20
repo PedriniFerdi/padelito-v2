@@ -65,8 +65,9 @@ async function getErrorMessage(response: Response) {
   const fallback = `La API respondio con estado ${response.status}.`
 
   try {
-    const data = (await response.json()) as { message?: string; title?: string }
-    return data.message ?? data.title ?? fallback
+    const data = (await response.json()) as { message?: string; title?: string; errors?: Record<string, string[]> }
+    const validationMessage = data.errors ? Object.values(data.errors).flat().find(Boolean) : undefined
+    return data.message ?? validationMessage ?? data.title ?? fallback
   } catch {
     return fallback
   }
