@@ -9,14 +9,31 @@ namespace Padelito.Infrastructure.Repositories;
 
 public sealed class PaymentRepository(PadelitoDbContext dbContext) : IPaymentRepository
 {
-    public Task<List<Payment>> GetPaymentsAsync(int clubId, DateOnly? dateFrom, DateOnly? dateTo, int? methodId, int? reservationId, CancellationToken cancellationToken)
+    public Task<List<PaymentReadModel>> GetPaymentsAsync(int clubId, DateTime? dateFromUtc, DateTime? dateToExclusiveUtc, int? methodId, int? reservationId, CancellationToken cancellationToken)
     {
-        var query = Details().Where(x => x.Reservation.AvailableTurn.Court.ClubId == clubId);
-        if (dateFrom.HasValue) query = query.Where(x => x.PaymentDate >= dateFrom.Value.ToDateTime(TimeOnly.MinValue));
-        if (dateTo.HasValue) query = query.Where(x => x.PaymentDate < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
+        var query = dbContext.Payments
+            .Where(x => x.Reservation.AvailableTurn.Court.ClubId == clubId);
+        if (dateFromUtc.HasValue) query = query.Where(x => x.PaymentDate >= dateFromUtc.Value);
+        if (dateToExclusiveUtc.HasValue) query = query.Where(x => x.PaymentDate < dateToExclusiveUtc.Value);
         if (methodId.HasValue) query = query.Where(x => x.PaymentMethodId == methodId.Value);
         if (reservationId.HasValue) query = query.Where(x => x.ReservationId == reservationId.Value);
-        return query.AsNoTracking().OrderByDescending(x => x.PaymentDate).ThenByDescending(x => x.Id).ToListAsync(cancellationToken);
+        return query.AsNoTracking()
+            .OrderByDescending(x => x.PaymentDate)
+            .ThenByDescending(x => x.Id)
+            .Select(x => new PaymentReadModel(
+                x.Id,
+                x.ReservationId,
+                x.Reservation.ReservationDate,
+                x.Reservation.Client.Person.FirstName + " " + x.Reservation.Client.Person.LastName,
+                x.Reservation.AvailableTurn.Court.Name,
+                x.PaymentMethodId,
+                x.PaymentMethod.Description,
+                x.Amount,
+                x.PaymentDate,
+                x.Note,
+                x.Reservation.FinalPrice,
+                x.Reservation.Payments.Sum(payment => payment.Amount)))
+            .ToListAsync(cancellationToken);
     }
 
     public Task<Reservation?> GetReservationAsync(int id, int clubId, CancellationToken cancellationToken) =>
@@ -49,9 +66,4 @@ public sealed class PaymentRepository(PadelitoDbContext dbContext) : IPaymentRep
         await transaction.CommitAsync(cancellationToken);
         return payment;
     }
-
-    private IQueryable<Payment> Details() => dbContext.Payments.Include(x => x.PaymentMethod)
-        .Include(x => x.Reservation).ThenInclude(x => x.Payments)
-        .Include(x => x.Reservation).ThenInclude(x => x.Client).ThenInclude(x => x.Person)
-        .Include(x => x.Reservation).ThenInclude(x => x.AvailableTurn).ThenInclude(x => x.Court);
 }

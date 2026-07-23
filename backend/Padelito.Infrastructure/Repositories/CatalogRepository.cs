@@ -1,4 +1,6 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Padelito.Application.Common;
 using Padelito.Application.Interfaces.Repositories;
 using Padelito.Domain.Entities;
 using Padelito.Infrastructure.Data;
@@ -25,9 +27,23 @@ public sealed class CatalogRepository(PadelitoDbContext dbContext) : ICatalogRep
         await dbContext.Clients.AddAsync(client, cancellationToken);
     }
 
-    public Task<List<Employee>> GetEmployeesAsync(int clubId, CancellationToken cancellationToken)
+    public Task<List<EmployeeReadModel>> GetEmployeesAsync(int clubId, CancellationToken cancellationToken)
     {
-        return dbContext.Employees.Include(x => x.Person).Include(x => x.User).Where(x => x.ClubId == clubId).AsNoTracking().OrderBy(x => x.Person.LastName).ThenBy(x => x.Person.FirstName).ToListAsync(cancellationToken);
+        return dbContext.Employees
+            .Where(x => x.ClubId == clubId)
+            .AsNoTracking()
+            .OrderBy(x => x.Person.LastName)
+            .ThenBy(x => x.Person.FirstName)
+            .Select(x => new EmployeeReadModel(
+                x.Id,
+                x.Person.FirstName,
+                x.Person.LastName,
+                x.Person.Dni ?? string.Empty,
+                x.Person.Phone ?? string.Empty,
+                x.Person.Email ?? string.Empty,
+                x.Person.IsActive,
+                dbContext.Users.Any(user => user.EmployeeId == x.Id)))
+            .ToListAsync(cancellationToken);
     }
 
     public Task<Employee?> GetEmployeeAsync(int id, CancellationToken cancellationToken)
@@ -135,9 +151,15 @@ public sealed class CatalogRepository(PadelitoDbContext dbContext) : ICatalogRep
         await dbContext.AvailableTurns.AddAsync(turn, cancellationToken);
     }
 
-    public Task<bool> AvailableTurnExistsAsync(int courtId, TimeOnly startTime, TimeOnly endTime, int? excludingId, CancellationToken cancellationToken)
+    public Task<bool> AvailableTurnOverlapsAsync(int courtId, TimeOnly startTime, TimeOnly endTime, int? excludingId, CancellationToken cancellationToken)
     {
-        return dbContext.AvailableTurns.AnyAsync(x => x.CourtId == courtId && x.StartTime == startTime && x.EndTime == endTime && (!excludingId.HasValue || x.Id != excludingId.Value), cancellationToken);
+        return dbContext.AvailableTurns.AnyAsync(
+            x => x.CourtId == courtId
+                && x.IsActive
+                && x.StartTime < endTime
+                && x.EndTime > startTime
+                && (!excludingId.HasValue || x.Id != excludingId.Value),
+            cancellationToken);
     }
 
     public Task<List<Promotion>> GetPromotionsAsync(CancellationToken cancellationToken)
@@ -155,8 +177,15 @@ public sealed class CatalogRepository(PadelitoDbContext dbContext) : ICatalogRep
         await dbContext.Promotions.AddAsync(promotion, cancellationToken);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
-        return dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.GetBaseException() is SqlException { Number: 51001 })
+        {
+            throw new ConflictException("El horario se superpone con otro turno activo de la misma cancha.");
+        }
     }
 }

@@ -8,7 +8,7 @@ public interface ICatalogRepository
     Task<Client?> GetClientAsync(int id, CancellationToken cancellationToken);
     Task AddClientAsync(Client client, CancellationToken cancellationToken);
 
-    Task<List<Employee>> GetEmployeesAsync(int clubId, CancellationToken cancellationToken);
+    Task<List<EmployeeReadModel>> GetEmployeesAsync(int clubId, CancellationToken cancellationToken);
     Task<Employee?> GetEmployeeAsync(int id, CancellationToken cancellationToken);
     Task AddEmployeeAsync(Employee employee, CancellationToken cancellationToken);
 
@@ -36,7 +36,7 @@ public interface ICatalogRepository
     Task<List<AvailableTurn>> GetAvailableTurnsAsync(int clubId, CancellationToken cancellationToken);
     Task<AvailableTurn?> GetAvailableTurnAsync(int id, CancellationToken cancellationToken);
     Task AddAvailableTurnAsync(AvailableTurn turn, CancellationToken cancellationToken);
-    Task<bool> AvailableTurnExistsAsync(int courtId, TimeOnly startTime, TimeOnly endTime, int? excludingId, CancellationToken cancellationToken);
+    Task<bool> AvailableTurnOverlapsAsync(int courtId, TimeOnly startTime, TimeOnly endTime, int? excludingId, CancellationToken cancellationToken);
 
     Task<List<Promotion>> GetPromotionsAsync(CancellationToken cancellationToken);
     Task<Promotion?> GetPromotionAsync(int id, CancellationToken cancellationToken);
@@ -44,3 +44,13 @@ public interface ICatalogRepository
 
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
+
+public sealed record EmployeeReadModel(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Dni,
+    string Phone,
+    string Email,
+    bool IsActive,
+    bool HasUser);
