@@ -1,21 +1,224 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #0f766e;
-  --color-secondary: #7c3aed;
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-muted: #64748b;
+  --color-primary: #7ad9ad;
+  --color-secondary: #4edea3;
+  --color-background: #0b1326;
+  --color-surface: #171f33;
+  --color-surface-high: #222a3d;
+  --color-surface-highest: #2d3449;
+  --color-border: #3e4943;
+  --color-text-primary: #dae2fd;
+  --color-text-secondary: #bdc9c1;
+  --color-muted: #88948b;
   font-family:
-    Roboto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+    "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.padelito-app-theme {
+  color: var(--color-text-primary);
+  color-scheme: dark;
+}
+
+.padelito-app-theme input:not([class~="bg-transparent"]),
+.padelito-app-theme select,
+.padelito-app-theme textarea {
+  border-color: var(--color-border);
+  background-color: #131b2e;
+  color: var(--color-text-primary);
+  --tw-ring-color: rgb(122 217 173 / 0.24);
+}
+
+.padelito-app-theme input::placeholder,
+.padelito-app-theme textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.padelito-app-theme input:focus,
+.padelito-app-theme select:focus,
+.padelito-app-theme textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.padelito-app-theme option {
+  background-color: #131b2e;
+  color: var(--color-text-primary);
+}
+
+.padelito-app-theme .bg-white,
+.padelito-app-theme [class~="bg-white/55"] {
+  background-color: var(--color-surface);
+}
+
+.padelito-app-theme .bg-slate-50,
+.padelito-app-theme [class~="bg-[#F8FAFC]"],
+.padelito-app-theme [class~="bg-[#F1F5F9]"],
+.padelito-app-theme [class~="bg-[#F0FDFA]"] {
+  background-color: var(--color-surface-high);
+}
+
+.padelito-app-theme .bg-slate-100,
+.padelito-app-theme [class~="bg-[#E2E8F0]"] {
+  background-color: var(--color-surface-highest);
+}
+
+.padelito-app-theme .bg-emerald-50,
+.padelito-app-theme .bg-teal-50,
+.padelito-app-theme [class~="bg-[#ECFDF5]"] {
+  background-color: #003824;
+}
+
+.padelito-app-theme [class~="bg-[#F5F3FF]"] {
+  background-color: var(--color-surface-high);
+}
+
+.padelito-app-theme .bg-red-50,
+.padelito-app-theme [class~="bg-[#FEF2F2]"] {
+  background-color: rgb(147 0 10 / 0.28);
+}
+
+.padelito-app-theme [class~="bg-[#FFF7ED]"] {
+  background-color: #362b16;
+}
+
+.padelito-app-theme [class~="bg-[#0F766E]"],
+.padelito-app-theme .bg-emerald-700 {
+  background-color: #057a55;
+}
+
+.padelito-app-theme .border-slate-100,
+.padelito-app-theme .border-slate-200,
+.padelito-app-theme [class~="border-[#CBD5E1]"],
+.padelito-app-theme [class~="border-[#E2E8F0]"],
+.padelito-app-theme [class~="border-[#F1F5F9]"] {
+  border-color: var(--color-border);
+}
+
+.padelito-app-theme .divide-slate-100,
+.padelito-app-theme [class~="divide-[#E2E8F0]"],
+.padelito-app-theme [class~="divide-[#F1F5F9]"] {
+  border-color: var(--color-border);
+}
+
+.padelito-app-theme .divide-slate-100 > :not(:last-child),
+.padelito-app-theme [class~="divide-[#E2E8F0]"] > :not(:last-child),
+.padelito-app-theme [class~="divide-[#F1F5F9]"] > :not(:last-child) {
+  border-color: var(--color-border);
+}
+
+.padelito-app-theme [class~="ring-[#99F6E4]"],
+.padelito-app-theme [class~="ring-[#A7F3D0]"],
+.padelito-app-theme [class~="ring-[#CCFBF1]"],
+.padelito-app-theme [class~="ring-[#CBD5E1]"] {
+  --tw-ring-color: rgb(122 217 173 / 0.28);
+}
+
+.padelito-app-theme [class~="text-[#0F172A]"],
+.padelito-app-theme .text-slate-900 {
+  color: var(--color-text-primary);
+}
+
+.padelito-app-theme [class~="text-[#334155]"],
+.padelito-app-theme [class~="text-[#475569]"],
+.padelito-app-theme [class~="text-[#64748B]"],
+.padelito-app-theme [class~="text-[#94A3B8]"],
+.padelito-app-theme .text-slate-500,
+.padelito-app-theme .text-slate-600,
+.padelito-app-theme .text-slate-700 {
+  color: var(--color-text-secondary);
+}
+
+.padelito-app-theme [class~="text-[#0F766E]"],
+.padelito-app-theme [class~="text-[#047857]"],
+.padelito-app-theme .text-emerald-700 {
+  color: var(--color-primary);
+}
+
+.padelito-app-theme [class~="text-[#6D28D9]"] {
+  color: var(--color-primary);
+}
+
+.padelito-app-theme .text-red-600,
+.padelito-app-theme .text-red-700,
+.padelito-app-theme [class~="text-[#991B1B]"],
+.padelito-app-theme [class~="text-[#B91C1C]"] {
+  color: #ffb4ab;
+}
+
+.padelito-app-theme [class~="text-[#9A3412]"],
+.padelito-app-theme [class~="text-[#B45309]"] {
+  color: #ffd28a;
+}
+
+.padelito-app-theme .border-emerald-200,
+.padelito-app-theme .border-teal-200,
+.padelito-app-theme [class~="border-[#99F6E4]"],
+.padelito-app-theme [class~="border-[#CCFBF1]"],
+.padelito-app-theme [class~="border-[#C4B5FD]"] {
+  border-color: rgb(122 217 173 / 0.42);
+}
+
+.padelito-app-theme .border-red-200,
+.padelito-app-theme [class~="border-[#FECACA]"] {
+  border-color: rgb(255 180 171 / 0.36);
+}
+
+.padelito-app-theme [class~="hover:bg-[#F8FAFC]"]:hover,
+.padelito-app-theme [class~="hover:bg-[#F1F5F9]"]:hover,
+.padelito-app-theme [class~="hover:bg-[#F0FDFA]"]:hover,
+.padelito-app-theme [class~="hover:bg-[#F5F3FF]"]:hover,
+.padelito-app-theme .hover\:bg-white:hover {
+  background-color: var(--color-surface-highest);
+}
+
+.padelito-app-theme [class~="hover:bg-[#FEF2F2]"]:hover {
+  background-color: rgb(147 0 10 / 0.36);
+}
+
+.padelito-app-theme [class~="hover:text-[#0F172A]"]:hover,
+.padelito-app-theme [class~="hover:text-[#334155]"]:hover {
+  color: var(--color-text-primary);
+}
+
+.padelito-app-theme [class~="hover:text-[#0F766E]"]:hover {
+  color: var(--color-primary);
+}
+
+.padelito-app-theme [class~="disabled:bg-[#F1F5F9]"]:disabled {
+  background-color: var(--color-surface-high);
+}
+
+.font-display {
+  font-family: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes login-ball-float {
+  0%,
+  100% {
+    transform: translate3d(0, -9px, 0);
+  }
+
+  50% {
+    transform: translate3d(0, 9px, 0);
+  }
+}
+
+.login-ball-float {
+  animation: login-ball-float 5.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-ball-float {
+    animation: none;
+    transform: none;
+  }
 }
 
 body {

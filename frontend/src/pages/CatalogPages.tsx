@@ -63,14 +63,13 @@ function PageShell({
   title: string
 }) {
   return (
-    <section className="space-y-4 rounded-2xl border border-[#E2E8F0]/80 bg-white/55 p-5 shadow-[0_18px_46px_rgba(15,23,42,0.05)]">
+    <section className="space-y-4 rounded-2xl border border-[#3e4943] bg-[#131b2e]/75 p-5 shadow-[0_18px_46px_rgba(6,14,32,0.22)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-sm font-semibold text-[#0F766E]">Etapa 3</p>
-          <h3 className="mt-2 text-2xl font-semibold tracking-normal text-[#0F172A]">{title}</h3>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#475569]">{description}</p>
+          <h3 className="text-2xl font-semibold tracking-normal text-[#dae2fd]">{title}</h3>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#bdc9c1]">{description}</p>
         </div>
-        <button className="inline-flex translate-y-0 items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#0F766E_0%,#7C3AED_100%)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(15,118,110,0.22)] transition duration-200 hover:-translate-y-px hover:brightness-110 active:translate-y-0" onClick={onCreate} type="button">
+        <button className="inline-flex translate-y-0 items-center gap-2 rounded-xl bg-[#057a55] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(0,82,54,0.24)] transition duration-200 hover:-translate-y-px hover:bg-[#006c4b] active:translate-y-0" onClick={onCreate} type="button">
           <Plus aria-hidden="true" className="size-4" strokeWidth={2.2} />
           {actionLabel}
         </button>
@@ -82,24 +81,24 @@ function PageShell({
 
 function SearchBox({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
-    <label className="flex w-full max-w-sm items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-3 py-2.5 text-sm text-[#475569] shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition focus-within:border-[#7C3AED] focus-within:ring-4 focus-within:ring-teal-500/10">
-      <Search aria-hidden="true" className="size-4 shrink-0 text-[#334155]" strokeWidth={1.9} />
-      <input className="w-full bg-transparent text-sm text-[#0F172A] outline-none placeholder:text-[#94A3B8]" onChange={(event) => onChange(event.target.value)} placeholder="Buscar" value={value} />
+    <label className="flex w-full max-w-sm items-center gap-2 rounded-xl border border-[#3e4943] bg-[#131b2e] px-3 py-2.5 text-sm text-[#bdc9c1] shadow-[0_8px_20px_rgba(6,14,32,0.16)] transition focus-within:border-[#7ad9ad] focus-within:ring-4 focus-within:ring-[#7ad9ad]/10">
+      <Search aria-hidden="true" className="size-4 shrink-0 text-[#88948b]" strokeWidth={1.9} />
+      <input className="w-full bg-transparent text-sm text-[#dae2fd] outline-none placeholder:text-[#88948b]" onChange={(event) => onChange(event.target.value)} placeholder="Buscar" value={value} />
     </label>
   )
 }
 
 function Panel({ children }: { children: ReactNode }) {
-  return <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-[0_14px_35px_rgba(15,23,42,0.06)]">{children}</div>
+  return <div className="overflow-hidden rounded-2xl border border-[#3e4943] bg-[#171f33] shadow-[0_14px_35px_rgba(6,14,32,0.2)]">{children}</div>
 }
 
 function FormControl({ children, error, label, className = '' }: { children: ReactNode; error?: string; label: string; className?: string }) {
-  return <label className={`grid gap-1 text-sm font-medium text-slate-700 ${className}`}><span>{label}</span>{children}{error ? <span className="text-xs font-medium text-red-600" role="alert">{error}</span> : null}</label>
+  return <label className={`grid gap-1 text-sm font-medium text-[#bdc9c1] ${className}`}><span>{label}</span>{children}{error ? <span className="text-xs font-medium text-[#ffb4ab]" role="alert">{error}</span> : null}</label>
 }
 
 function ActionButton({ children, onClick, title }: { children: React.ReactNode; onClick: () => void; title: string }) {
   return (
-    <button className="inline-flex size-8 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white text-[#334155] shadow-[0_6px_14px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-px hover:border-[#0F766E]/30 hover:bg-[#F8FAFC] hover:text-[#0F766E] active:translate-y-0" onClick={onClick} title={title} type="button">
+    <button className="inline-flex size-8 items-center justify-center rounded-lg border border-[#3e4943] bg-[#222a3d] text-[#bdc9c1] shadow-[0_6px_14px_rgba(6,14,32,0.16)] transition duration-200 hover:-translate-y-px hover:border-[#7ad9ad]/40 hover:bg-[#2d3449] hover:text-[#7ad9ad] active:translate-y-0" onClick={onClick} title={title} type="button">
       {children}
     </button>
   )
@@ -165,10 +164,10 @@ function PersonForm({
       <FormControl error={fieldErrors.dni} label="DNI"><input aria-invalid={Boolean(fieldErrors.dni)} inputMode="numeric" required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={10} onChange={(event) => update('dni', event.target.value)} value={form.dni} /></FormControl>
       <FormControl error={fieldErrors.phone} label="Teléfono"><input aria-invalid={Boolean(fieldErrors.phone)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={40} onChange={(event) => update('phone', event.target.value)} type="tel" value={form.phone} /></FormControl>
       <FormControl className="md:col-span-2" error={fieldErrors.email} label="Email"><input aria-invalid={Boolean(fieldErrors.email)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={120} onChange={(event) => update('email', event.target.value)} type="email" value={form.email} /></FormControl>
-      {error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600 md:col-span-2" role="alert">{error}</p> : null}
       <div className="flex justify-end gap-2 md:col-span-2">
         <button className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium" onClick={onCancel} type="button">Cancelar</button>
-        <button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={isSaving} type="submit">Guardar</button>
+        <button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={isSaving} type="submit">{isSaving ? 'Guardando...' : 'Guardar'}</button>
       </div>
     </form>
   )
@@ -208,8 +207,8 @@ function PeopleTable<TItem extends Client | Employee>({
           {items.map((item) => (
             <tr className="transition hover:bg-[#F8FAFC]" key={item.id}>
               <td className="px-4 py-3 font-medium text-[#0F172A]">{item.firstName} {item.lastName}</td>
-              <td className="px-4 py-3 text-[#334155]">{item.dni ?? '-'}</td>
-              <td className="px-4 py-3 text-[#334155]">{item.phone ?? item.email ?? '-'}</td>
+              <td className="px-4 py-3 text-[#334155]">{item.dni || '-'}</td>
+              <td className="px-4 py-3 text-[#334155]">{item.phone || item.email || '-'}</td>
               {kind === 'employees' ? <td className="px-4 py-3 text-[#334155]">{(item as Employee).hasUser ? 'Asignado' : 'Sin usuario'}</td> : null}
               <td className="px-4 py-3">{activeBadge(item.isActive)}</td>
               <td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td>
@@ -244,13 +243,46 @@ function PeoplePage<TItem extends Client | Employee>({
   const [search, setSearch] = useState('')
   const [formMode, setFormMode] = useState<FormMode<TItem>>(null)
   const [error, setError] = useState<string>()
+  const [successMessage, setSuccessMessage] = useState<string>()
   const query = useQuery({ queryKey: [queryKey], queryFn: api.list })
   const saveMutation = useMutation({
     mutationFn: (payload: PersonPayload) => formMode?.item ? api.update(formMode.item.id, payload) : api.create(payload),
-    onSuccess: async () => {
+    onMutate: () => {
+      setError(undefined)
+      setSuccessMessage(undefined)
+    },
+    onSuccess: (savedItem) => {
+      const wasEditing = Boolean(formMode?.item)
+
+      try {
+        queryClient.setQueryData<TItem[]>([queryKey], (currentItems = []) => {
+          const itemIndex = currentItems.findIndex((item) => item.id === savedItem.id)
+          const nextItems = itemIndex >= 0
+            ? currentItems.map((item) => item.id === savedItem.id ? savedItem : item)
+            : [...currentItems, savedItem]
+
+          return nextItems.toSorted((left, right) =>
+            `${left.lastName} ${left.firstName}`.localeCompare(
+              `${right.lastName} ${right.firstName}`,
+              'es',
+              { sensitivity: 'base' },
+            ))
+        })
+
+      } catch {
+        setError('El registro se guardó, pero no se pudo actualizar el listado. Recargá la página para verificarlo.')
+        return
+      }
+
+      if (!wasEditing) setSearch('')
       setFormMode(null)
       setError(undefined)
-      await queryClient.invalidateQueries({ queryKey: [queryKey] })
+      setSuccessMessage(
+        kind === 'employees'
+          ? `Empleado ${wasEditing ? 'actualizado' : 'creado'} correctamente`
+          : `Cliente ${wasEditing ? 'actualizado' : 'creado'} correctamente`,
+      )
+      void queryClient.invalidateQueries({ queryKey: [queryKey] })
     },
     onError: (mutationError) => setError(getErrorMessage(mutationError)),
   })
@@ -261,11 +293,45 @@ function PeoplePage<TItem extends Client | Employee>({
   const items = useMemo(() => (query.data ?? []).filter((item) => `${item.firstName} ${item.lastName} ${item.dni ?? ''}`.toLowerCase().includes(search.toLowerCase())), [query.data, search])
 
   return (
-    <PageShell actionLabel={`Nuevo ${kind === 'clients' ? 'cliente' : 'empleado'}`} description={description} onCreate={() => setFormMode({ item: null })} title={title}>
+    <PageShell
+      actionLabel={`Nuevo ${kind === 'clients' ? 'cliente' : 'empleado'}`}
+      description={description}
+      onCreate={() => {
+        setError(undefined)
+        setSuccessMessage(undefined)
+        setFormMode({ item: null })
+      }}
+      title={title}
+    >
+      {successMessage ? <p aria-live="polite" className="rounded-xl border border-emerald-700/40 bg-emerald-950/40 px-4 py-3 text-sm font-medium text-emerald-200" role="status">{successMessage}</p> : null}
       <SearchBox onChange={setSearch} value={search} />
       <Panel>
-        {formMode ? <PersonForm error={error} initial={toPersonPayload(formMode.item)} isSaving={saveMutation.isPending} onCancel={() => setFormMode(null)} onSubmit={(payload) => saveMutation.mutate(payload)} title={formMode.item ? 'Editar registro' : 'Nuevo registro'} /> : null}
-        {query.isLoading ? <p className="p-4 text-sm text-slate-500">Cargando...</p> : <PeopleTable items={items} kind={kind} onEdit={(item) => setFormMode({ item })} onToggle={(item) => toggleMutation.mutate(item)} />}
+        {formMode ? <PersonForm error={error} initial={toPersonPayload(formMode.item)} isSaving={saveMutation.isPending} onCancel={() => { setFormMode(null); setError(undefined) }} onSubmit={(payload) => saveMutation.mutate(payload)} title={formMode.item ? 'Editar registro' : 'Nuevo registro'} /> : null}
+        {query.isError && query.data ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-700/30 bg-amber-950/30 p-4" role="alert">
+            <p className="text-sm text-amber-200">No se pudo actualizar el listado. Se muestran los últimos datos disponibles.</p>
+            <button className="rounded-md border border-amber-300/60 px-3 py-2 text-sm font-medium text-amber-100" onClick={() => query.refetch()} type="button">Reintentar</button>
+          </div>
+        ) : null}
+        {query.isLoading ? (
+          <p className="p-4 text-sm text-slate-500">Cargando...</p>
+        ) : query.isError && !query.data ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4" role="alert">
+            <p className="text-sm text-red-600">No se pudo cargar el listado. Intentá nuevamente.</p>
+            <button className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700" onClick={() => query.refetch()} type="button">Reintentar</button>
+          </div>
+        ) : (
+          <PeopleTable
+            items={items}
+            kind={kind}
+            onEdit={(item) => {
+              setError(undefined)
+              setSuccessMessage(undefined)
+              setFormMode({ item })
+            }}
+            onToggle={(item) => toggleMutation.mutate(item)}
+          />
+        )}
       </Panel>
     </PageShell>
   )
