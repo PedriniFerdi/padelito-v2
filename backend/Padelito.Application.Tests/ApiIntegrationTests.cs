@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,7 @@ using Padelito.Application.DTOs.Catalogs;
 using Padelito.Application.DTOs.Payments;
 using Padelito.Application.DTOs.Reports;
 using Padelito.Application.DTOs.Reservations;
+using Padelito.Domain.Entities;
 using Padelito.Infrastructure.Data;
 using Xunit;
 
@@ -159,8 +161,61 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<TimeProvider>(new FixedTimeProvider(new(2026, 7, 12, 12, 0, 0, TimeSpan.Zero)));
             using var provider = services.BuildServiceProvider();
             using var scope = provider.CreateScope();
-            scope.ServiceProvider.GetRequiredService<PadelitoDbContext>().Database.EnsureCreated();
+            var dbContext = scope.ServiceProvider.GetRequiredService<PadelitoDbContext>();
+            dbContext.Database.EnsureCreated();
+            SeedApiTestData(dbContext);
         });
+    }
+
+    private static void SeedApiTestData(PadelitoDbContext dbContext)
+    {
+        var now = DateTime.UtcNow;
+        var club = new Club { Id = 1, Name = "Padelito Test", IsActive = true, CreatedAt = now };
+        var adminPerson = new Person
+        {
+            Id = 1,
+            FirstName = "Admin",
+            LastName = "Test",
+            Dni = "30111222",
+            Phone = "1140001001",
+            Email = "admin@test.local",
+            IsActive = true,
+            CreatedAt = now
+        };
+        var clientPerson = new Person
+        {
+            Id = 9001,
+            FirstName = "Lucía",
+            LastName = "Fernández",
+            Dni = "35421678",
+            Phone = "1158214076",
+            Email = "lucia@example.com",
+            IsActive = true,
+            CreatedAt = now
+        };
+        var employee = new Employee { Id = 1, PersonId = 1, ClubId = 1 };
+        var user = new User
+        {
+            Id = 1,
+            Username = "admin",
+            PasswordHash = string.Empty,
+            EmployeeId = 1,
+            RoleId = 1,
+            IsActive = true,
+            CreatedAt = now
+        };
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, "admin123");
+
+        dbContext.AddRange(
+            club,
+            adminPerson,
+            clientPerson,
+            new Client { Id = 9001, PersonId = 9001 },
+            employee,
+            user,
+            new Court { Id = 9001, ClubId = 1, CourtTypeId = 2, Name = "Central Test", HourPrice = 18000m, IsActive = true },
+            new AvailableTurn { Id = 9001, CourtId = 9001, StartTime = new TimeOnly(10, 0), EndTime = new TimeOnly(11, 30), IsActive = true });
+        dbContext.SaveChanges();
     }
 
 }
