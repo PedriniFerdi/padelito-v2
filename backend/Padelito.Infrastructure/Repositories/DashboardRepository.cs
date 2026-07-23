@@ -25,4 +25,23 @@ public sealed class DashboardRepository(PadelitoDbContext dbContext) : IDashboar
             .Include(x => x.AvailableTurn).ThenInclude(x => x.Court).Include(x => x.ReservationStatus)
             .Where(x => x.AvailableTurn.Court.ClubId == clubId && x.ReservationDate == date)
             .AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(take).ToListAsync(cancellationToken);
+
+    public async Task<DashboardRevenueIntelligenceData> GetRevenueIntelligenceAsync(int clubId, DateOnly dateFrom, DateOnly dateTo, CancellationToken cancellationToken)
+    {
+        var reservations = await dbContext.Reservations
+            .Include(x => x.AvailableTurn).ThenInclude(x => x.Court)
+            .Include(x => x.Promotion)
+            .Include(x => x.Payments)
+            .Where(x => x.AvailableTurn.Court.ClubId == clubId && x.ReservationDate >= dateFrom && x.ReservationDate <= dateTo)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var activeTurns = await dbContext.AvailableTurns
+            .Include(x => x.Court)
+            .Where(x => x.IsActive && x.Court.IsActive && x.Court.ClubId == clubId)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return new(reservations, activeTurns);
+    }
 }

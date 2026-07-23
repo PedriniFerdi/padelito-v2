@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Padelito.Application.DTOs.Auth;
 using Padelito.Application.DTOs.Audit;
 using Padelito.Application.DTOs.Catalogs;
+using Padelito.Application.DTOs.Dashboard;
 using Padelito.Application.DTOs.Payments;
 using Padelito.Application.DTOs.Reports;
 using Padelito.Application.DTOs.Reservations;
@@ -61,11 +62,33 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
     }
 
     [Fact]
+    public async Task Dashboard_revenue_intelligence_returns_club_scoped_metrics()
+    {
+        using var client = await CreateAuthenticatedClientAsync();
+        var createdResponse = await client.PostAsJsonAsync("/api/reservations", new ReservationCreateDto(9001, 9001, null, new(2026, 7, 15), 2));
+        createdResponse.EnsureSuccessStatusCode();
+        var created = await createdResponse.Content.ReadFromJsonAsync<ReservationDetailDto>();
+        var paymentResponse = await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(created!.Id, 1, 1000m, new(2026, 7, 15, 15, 0, 0, DateTimeKind.Utc), "Dashboard"));
+        paymentResponse.EnsureSuccessStatusCode();
+
+        var dashboard = await client.GetFromJsonAsync<DashboardRevenueIntelligenceDto>("/api/dashboard/revenue-intelligence?dateFrom=2026-07-15&dateTo=2026-07-15");
+
+        Assert.NotNull(dashboard);
+        Assert.Equal(new DateOnly(2026, 7, 15), dashboard!.DateFrom);
+        Assert.Equal(1000m, dashboard.Summary.TotalRevenue);
+        Assert.Equal(100m, dashboard.Summary.AverageOccupancyRate);
+        var court = Assert.Single(dashboard.Courts);
+        Assert.Equal("Central Test", court.CourtName);
+        Assert.Equal(1, court.ReservedSlots);
+    }
+
+    [Fact]
     public async Task Endpoints_require_authentication()
     {
         using var client = factory.CreateClient();
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/reports/reservations")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/audit/reservations")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/dashboard/revenue-intelligence")).StatusCode);
     }
 
     [Fact]

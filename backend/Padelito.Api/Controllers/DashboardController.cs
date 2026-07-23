@@ -13,4 +13,8 @@ public sealed class DashboardController(IDashboardService dashboardService) : Ca
     [HttpGet("summary")]
     public Task<ActionResult<DashboardSummaryDto>> Get(CancellationToken cancellationToken) =>
         HandleAsync(() => dashboardService.GetSummaryAsync(CurrentClubId, cancellationToken));
+
+    [HttpGet("revenue-intelligence")]
+    public Task<ActionResult<DashboardRevenueIntelligenceDto>> GetRevenueIntelligence([FromQuery] DashboardRevenueIntelligenceFilterDto filter, CancellationToken cancellationToken) =>
+        HandleAsync(() => dashboardService.GetRevenueIntelligenceAsync(CurrentClubId, filter, cancellationToken));
 }

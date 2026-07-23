@@ -165,6 +165,55 @@ export type DashboardSummary = {
   latestReservations: DashboardReservation[]
 }
 
+export type DashboardRevenueIntelligence = {
+  dateFrom: string
+  dateTo: string
+  summary: {
+    totalRevenue: number
+    reservedValue: number
+    pendingBalance: number
+    cancellationRate: number
+    averageOccupancyRate: number
+  }
+  courts: {
+    courtId: number
+    courtName: string
+    reservedSlots: number
+    availableSlots: number
+    occupancyRate: number
+    revenue: number
+  }[]
+  demand: {
+    dayOfWeek: number
+    dayName: string
+    hour: number
+    reservationCount: number
+    occupancyRate: number
+  }[]
+  peakDemand: {
+    dayOfWeek: number
+    dayName: string
+    hour: number
+    reservationCount: number
+    occupancyRate: number
+  }[]
+  offPeakDemand: {
+    dayOfWeek: number
+    dayName: string
+    hour: number
+    reservationCount: number
+    occupancyRate: number
+  }[]
+  bestPromotion?: {
+    promotionId: number
+    promotionName: string
+    reservationCount: number
+    grossRevenue: number
+    discountTotal: number
+    collectedRevenue: number
+  } | null
+}
+
 export type ReservationReportRow = {
   reservationId: number
   reservationDate: string
