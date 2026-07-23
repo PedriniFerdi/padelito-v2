@@ -6,14 +6,16 @@ using Padelito.Domain.Entities;
 
 namespace Padelito.Application.Services;
 
-public sealed class PaymentService(IPaymentRepository repository) : IPaymentService
+public sealed class PaymentService(IPaymentRepository repository, TimeZoneInfo clubTimeZone) : IPaymentService
 {
     public async Task<IReadOnlyList<PaymentListDto>> GetPaymentsAsync(int clubId, PaymentFilterDto filter, CancellationToken cancellationToken)
     {
         if (filter.DateFrom.HasValue && filter.DateTo.HasValue && filter.DateTo < filter.DateFrom)
             throw new BusinessException("La fecha hasta debe ser mayor o igual a la fecha desde.");
 
-        var payments = await repository.GetPaymentsAsync(clubId, filter.DateFrom, filter.DateTo, filter.MethodId, filter.ReservationId, cancellationToken);
+        DateTime? dateFromUtc = filter.DateFrom.HasValue ? ToUtc(filter.DateFrom.Value) : null;
+        DateTime? dateToExclusiveUtc = filter.DateTo.HasValue ? ToUtc(filter.DateTo.Value.AddDays(1)) : null;
+        var payments = await repository.GetPaymentsAsync(clubId, dateFromUtc, dateToExclusiveUtc, filter.MethodId, filter.ReservationId, cancellationToken);
         return payments.Select(ToDto).ToList();
     }
 
@@ -56,5 +58,17 @@ public sealed class PaymentService(IPaymentRepository repository) : IPaymentServ
             payment.Reservation.AvailableTurn.Court.Name, payment.PaymentMethodId, payment.PaymentMethod.Description,
             payment.Amount, payment.PaymentDate, payment.Note, payment.Reservation.FinalPrice, paid,
             Math.Max(0, payment.Reservation.FinalPrice - paid));
+    }
+
+    private static PaymentListDto ToDto(PaymentReadModel payment) =>
+        new(payment.Id, payment.ReservationId, payment.ReservationDate, payment.ClientName,
+            payment.CourtName, payment.PaymentMethodId, payment.PaymentMethod, payment.Amount,
+            payment.PaymentDate, payment.Note, payment.FinalPrice, payment.TotalPaid,
+            Math.Max(0, payment.FinalPrice - payment.TotalPaid));
+
+    private DateTime ToUtc(DateOnly date)
+    {
+        var localMidnight = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(localMidnight, clubTimeZone);
     }
 }
