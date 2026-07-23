@@ -1,5 +1,7 @@
 # Padelito v2
 
+> Despliegue en MonsterASP.NET Free: [`docs/MONSTERASP_FREE_DEPLOY.md`](docs/MONSTERASP_FREE_DEPLOY.md)
+
 Sistema web de gestión interna para clubes de pádel. Centraliza clientes, canchas, turnos, promociones, reservas, pagos, reportes y auditoría en un backoffice protegido por roles.
 
 ![Reporte operativo de reservas](docs/screenshots/reports.png)

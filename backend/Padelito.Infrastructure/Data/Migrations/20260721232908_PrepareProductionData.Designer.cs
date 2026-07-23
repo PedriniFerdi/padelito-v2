@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Padelito.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Padelito.Infrastructure.Data;
 namespace Padelito.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(PadelitoDbContext))]
-    partial class PadelitoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260721232908_PrepareProductionData")]
+    partial class PrepareProductionData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,8 +53,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                     b.ToTable("AvailableTurns", null, t =>
                         {
                             t.HasCheckConstraint("CK_AvailableTurns_EndTime", "[EndTime] > [StartTime]");
-
-                            t.UseSqlOutputClause(false);
                         });
                 });
 
@@ -311,10 +312,12 @@ namespace Padelito.Infrastructure.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Dni")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
@@ -332,6 +335,7 @@ namespace Padelito.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(60)");
 
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 

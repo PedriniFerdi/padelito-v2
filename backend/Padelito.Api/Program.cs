@@ -1,8 +1,10 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using Padelito.Api.Security;
+using Padelito.Api.Startup;
 using Padelito.Application.Interfaces.Security;
 using Padelito.Application.Interfaces.Services;
 using Padelito.Application.Services;
@@ -12,6 +14,13 @@ using Padelito.Infrastructure.Extensions;
 const string FrontendCorsPolicy = "Frontend";
 
 var builder = WebApplication.CreateBuilder(args);
+ValidateProductionConfiguration(builder);
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.SingleLine = true;
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -72,6 +81,8 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+await ProductionBootstrapper.InitializeAsync(app.Services, app.Configuration, app.Logger);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -79,12 +90,98 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors(FrontendCorsPolicy);
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHsts();
+    app.Use(async (context, next) =>
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data:; font-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'";
+            context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            return Task.CompletedTask;
+        });
+        await next();
+    });
+}
+else
+{
+    app.UseCors(FrontendCorsPolicy);
+}
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapFallback(async context =>
+{
+    if (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/health"))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    var indexPath = Path.Combine(app.Environment.WebRootPath ?? "wwwroot", "index.html");
+    if (!File.Exists(indexPath))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    context.Response.ContentType = "text/html; charset=utf-8";
+    await context.Response.SendFileAsync(indexPath);
+});
 
 app.Run();
+
+static void ValidateProductionConfiguration(WebApplicationBuilder builder)
+{
+    if (!builder.Environment.IsProduction())
+    {
+        return;
+    }
+
+    SqlConnectionStringBuilder sqlConnection;
+    try
+    {
+        sqlConnection = new SqlConnectionStringBuilder(builder.Configuration.GetConnectionString("PadelitoDb"));
+    }
+    catch (Exception exception)
+    {
+        throw new InvalidOperationException("Production requires a valid ConnectionStrings__PadelitoDb value.", exception);
+    }
+
+    if (string.IsNullOrWhiteSpace(sqlConnection.DataSource)
+        || sqlConnection.DataSource.Contains("localhost", StringComparison.OrdinalIgnoreCase)
+        || sqlConnection.DataSource.Contains("(localdb)", StringComparison.OrdinalIgnoreCase)
+        || sqlConnection.IntegratedSecurity
+        || string.IsNullOrWhiteSpace(sqlConnection.UserID)
+        || string.IsNullOrWhiteSpace(sqlConnection.Password))
+    {
+        throw new InvalidOperationException("Production requires ConnectionStrings__PadelitoDb with MonsterASP.NET SQL credentials.");
+    }
+
+    var jwtKey = builder.Configuration["Jwt:Key"] ?? string.Empty;
+    if (jwtKey.Length < 32 || jwtKey.Contains("Development-Only", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException("Production requires a random Jwt__Key of at least 32 characters.");
+    }
+
+    if (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Issuer"])
+        || string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Audience"]))
+    {
+        throw new InvalidOperationException("Production requires Jwt__Issuer and Jwt__Audience.");
+    }
+
+    var allowedHosts = builder.Configuration["AllowedHosts"];
+    if (string.IsNullOrWhiteSpace(allowedHosts) || allowedHosts == "*")
+    {
+        throw new InvalidOperationException("Production requires AllowedHosts to contain the deployed hostname.");
+    }
+}
 
 public partial class Program;

@@ -72,9 +72,9 @@ public sealed class PadelitoDbContext(DbContextOptions<PadelitoDbContext> option
                 });
             entity.Property(x => x.FirstName).HasMaxLength(60).IsRequired();
             entity.Property(x => x.LastName).HasMaxLength(60).IsRequired();
-            entity.Property(x => x.Dni).HasMaxLength(20).IsRequired();
-            entity.Property(x => x.Phone).HasMaxLength(40).IsRequired();
-            entity.Property(x => x.Email).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.Dni).HasMaxLength(20);
+            entity.Property(x => x.Phone).HasMaxLength(40);
+            entity.Property(x => x.Email).HasMaxLength(120);
             entity.Property(x => x.CreatedAt).HasColumnType("datetime2");
             entity.HasIndex(x => x.Dni).IsUnique().HasFilter("[Dni] IS NOT NULL");
         });
@@ -178,7 +178,13 @@ public sealed class PadelitoDbContext(DbContextOptions<PadelitoDbContext> option
         {
             entity.ToTable(
                 "AvailableTurns",
-                table => table.HasCheckConstraint("CK_AvailableTurns_EndTime", "[EndTime] > [StartTime]"));
+                table =>
+                {
+                    table.HasCheckConstraint("CK_AvailableTurns_EndTime", "[EndTime] > [StartTime]");
+                    // SQL Server does not allow EF Core's direct OUTPUT clause on
+                    // tables with enabled triggers. Use the compatible INSERT path.
+                    table.UseSqlOutputClause(false);
+                });
             entity.HasIndex(x => new { x.CourtId, x.StartTime, x.EndTime }).IsUnique();
             entity.HasOne(x => x.Court)
                 .WithMany(x => x.AvailableTurns)
