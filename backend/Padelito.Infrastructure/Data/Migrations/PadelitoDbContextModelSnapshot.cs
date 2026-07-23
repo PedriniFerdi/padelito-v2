@@ -50,48 +50,8 @@ namespace Padelito.Infrastructure.Data.Migrations
                     b.ToTable("AvailableTurns", null, t =>
                         {
                             t.HasCheckConstraint("CK_AvailableTurns_EndTime", "[EndTime] > [StartTime]");
-                        });
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 9001,
-                            CourtId = 9001,
-                            EndTime = new TimeOnly(11, 30, 0),
-                            IsActive = true,
-                            StartTime = new TimeOnly(10, 0, 0)
-                        },
-                        new
-                        {
-                            Id = 9002,
-                            CourtId = 9001,
-                            EndTime = new TimeOnly(19, 30, 0),
-                            IsActive = true,
-                            StartTime = new TimeOnly(18, 0, 0)
-                        },
-                        new
-                        {
-                            Id = 9003,
-                            CourtId = 9002,
-                            EndTime = new TimeOnly(17, 30, 0),
-                            IsActive = true,
-                            StartTime = new TimeOnly(16, 0, 0)
-                        },
-                        new
-                        {
-                            Id = 9004,
-                            CourtId = 9002,
-                            EndTime = new TimeOnly(21, 30, 0),
-                            IsActive = true,
-                            StartTime = new TimeOnly(20, 0, 0)
-                        },
-                        new
-                        {
-                            Id = 9005,
-                            CourtId = 9003,
-                            EndTime = new TimeOnly(20, 30, 0),
-                            IsActive = true,
-                            StartTime = new TimeOnly(19, 0, 0)
+                            t.UseSqlOutputClause(false);
                         });
                 });
 
@@ -112,28 +72,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Clients", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 9001,
-                            PersonId = 9001
-                        },
-                        new
-                        {
-                            Id = 9002,
-                            PersonId = 9002
-                        },
-                        new
-                        {
-                            Id = 9003,
-                            PersonId = 9003
-                        },
-                        new
-                        {
-                            Id = 9004,
-                            PersonId = 9004
-                        });
                 });
 
             modelBuilder.Entity("Padelito.Domain.Entities.Club", b =>
@@ -170,18 +108,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clubs", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Address = "Buenos Aires",
-                            CreatedAt = new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "admin@padelito.com",
-                            IsActive = true,
-                            Name = "Padelito",
-                            Phone = "11-4000-0000"
-                        });
                 });
 
             modelBuilder.Entity("Padelito.Domain.Entities.Court", b =>
@@ -219,35 +145,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                     b.ToTable("Courts", null, t =>
                         {
                             t.HasCheckConstraint("CK_Courts_HourPrice", "[HourPrice] >= 0");
-                        });
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 9001,
-                            ClubId = 1,
-                            CourtTypeId = 2,
-                            HourPrice = 18000m,
-                            IsActive = true,
-                            Name = "Central Demo"
-                        },
-                        new
-                        {
-                            Id = 9002,
-                            ClubId = 1,
-                            CourtTypeId = 3,
-                            HourPrice = 22000m,
-                            IsActive = true,
-                            Name = "Norte Demo"
-                        },
-                        new
-                        {
-                            Id = 9003,
-                            ClubId = 1,
-                            CourtTypeId = 4,
-                            HourPrice = 26000m,
-                            IsActive = true,
-                            Name = "Arena Demo"
                         });
                 });
 
@@ -316,14 +213,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Employees", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ClubId = 1,
-                            PersonId = 1
-                        });
                 });
 
             modelBuilder.Entity("Padelito.Domain.Entities.Payment", b =>
@@ -359,35 +248,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                     b.ToTable("Payments", null, t =>
                         {
                             t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
-                        });
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 9001,
-                            Amount = 22950m,
-                            Note = "Pago completo demo",
-                            PaymentDate = new DateTime(2026, 7, 9, 11, 0, 0, 0, DateTimeKind.Utc),
-                            PaymentMethodId = 4,
-                            ReservationId = 9001
-                        },
-                        new
-                        {
-                            Id = 9002,
-                            Amount = 15000m,
-                            Note = "Seña en efectivo",
-                            PaymentDate = new DateTime(2026, 7, 9, 13, 0, 0, 0, DateTimeKind.Utc),
-                            PaymentMethodId = 1,
-                            ReservationId = 9002
-                        },
-                        new
-                        {
-                            Id = 9003,
-                            Amount = 27000m,
-                            Note = "Mercado Pago",
-                            PaymentDate = new DateTime(2026, 7, 11, 15, 0, 0, 0, DateTimeKind.Utc),
-                            PaymentMethodId = 5,
-                            ReservationId = 9003
                         });
                 });
 
@@ -451,12 +311,10 @@ namespace Padelito.Infrastructure.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Dni")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
@@ -474,7 +332,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(60)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 
@@ -495,63 +352,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                             t.HasCheckConstraint("CK_People_LastName_NotBlank", "LEN(LTRIM(RTRIM([LastName]))) > 0");
 
                             t.HasCheckConstraint("CK_People_Phone_NotBlank", "LEN(LTRIM(RTRIM([Phone]))) > 0");
-                        });
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Dni = "30111222",
-                            Email = "carlos.benitez@padelito.com",
-                            FirstName = "Carlos",
-                            IsActive = true,
-                            LastName = "Benitez",
-                            Phone = "11-4000-1001"
-                        },
-                        new
-                        {
-                            Id = 9001,
-                            CreatedAt = new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Dni = "35421678",
-                            Email = "lucia.fernandez@example.com",
-                            FirstName = "Lucía",
-                            IsActive = true,
-                            LastName = "Fernández",
-                            Phone = "11-5821-4076"
-                        },
-                        new
-                        {
-                            Id = 9002,
-                            CreatedAt = new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Dni = "32987412",
-                            Email = "martin.sosa@example.com",
-                            FirstName = "Martín",
-                            IsActive = true,
-                            LastName = "Sosa",
-                            Phone = "11-4962-1180"
-                        },
-                        new
-                        {
-                            Id = 9003,
-                            CreatedAt = new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Dni = "38741209",
-                            Email = "valentina.rios@example.com",
-                            FirstName = "Valentina",
-                            IsActive = true,
-                            LastName = "Ríos",
-                            Phone = "11-6234-9041"
-                        },
-                        new
-                        {
-                            Id = 9004,
-                            CreatedAt = new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Dni = "36109874",
-                            Email = "nicolas.acosta@example.com",
-                            FirstName = "Nicolás",
-                            IsActive = true,
-                            LastName = "Acosta",
-                            Phone = "11-4487-6620"
                         });
                 });
 
@@ -591,18 +391,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                             t.HasCheckConstraint("CK_Promotions_DateRange", "[DateTo] >= [DateFrom]");
 
                             t.HasCheckConstraint("CK_Promotions_DiscountPercentage", "[DiscountPercentage] >= 0 AND [DiscountPercentage] <= 100");
-                        });
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 9001,
-                            DateFrom = new DateOnly(2026, 7, 1),
-                            DateTo = new DateOnly(2026, 12, 31),
-                            Description = "Beneficio demo para turnos seleccionados.",
-                            DiscountPercentage = 15m,
-                            IsActive = true,
-                            Name = "Horario tranquilo demo"
                         });
                 });
 
@@ -663,70 +451,6 @@ namespace Padelito.Infrastructure.Data.Migrations
 
                             t.HasCheckConstraint("CK_Reservations_FinalPrice", "[FinalPrice] >= 0");
                         });
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 9001,
-                            AvailableTurnId = 9001,
-                            BasePrice = 27000m,
-                            ClientId = 9001,
-                            CreatedAt = new DateTime(2026, 7, 8, 10, 0, 0, 0, DateTimeKind.Utc),
-                            EmployeeId = 1,
-                            FinalPrice = 22950m,
-                            PromotionId = 9001,
-                            ReservationDate = new DateOnly(2026, 7, 8),
-                            ReservationStatusId = 4
-                        },
-                        new
-                        {
-                            Id = 9002,
-                            AvailableTurnId = 9003,
-                            BasePrice = 33000m,
-                            ClientId = 9002,
-                            CreatedAt = new DateTime(2026, 7, 8, 12, 0, 0, 0, DateTimeKind.Utc),
-                            EmployeeId = 1,
-                            FinalPrice = 33000m,
-                            ReservationDate = new DateOnly(2026, 7, 9),
-                            ReservationStatusId = 4
-                        },
-                        new
-                        {
-                            Id = 9003,
-                            AvailableTurnId = 9002,
-                            BasePrice = 27000m,
-                            ClientId = 9003,
-                            CreatedAt = new DateTime(2026, 7, 10, 14, 0, 0, 0, DateTimeKind.Utc),
-                            EmployeeId = 1,
-                            FinalPrice = 27000m,
-                            ReservationDate = new DateOnly(2026, 7, 12),
-                            ReservationStatusId = 2
-                        },
-                        new
-                        {
-                            Id = 9004,
-                            AvailableTurnId = 9004,
-                            BasePrice = 33000m,
-                            ClientId = 9004,
-                            CreatedAt = new DateTime(2026, 7, 11, 16, 0, 0, 0, DateTimeKind.Utc),
-                            EmployeeId = 1,
-                            FinalPrice = 28050m,
-                            PromotionId = 9001,
-                            ReservationDate = new DateOnly(2026, 7, 13),
-                            ReservationStatusId = 1
-                        },
-                        new
-                        {
-                            Id = 9005,
-                            AvailableTurnId = 9005,
-                            BasePrice = 39000m,
-                            ClientId = 9001,
-                            CreatedAt = new DateTime(2026, 7, 9, 9, 0, 0, 0, DateTimeKind.Utc),
-                            EmployeeId = 1,
-                            FinalPrice = 39000m,
-                            ReservationDate = new DateOnly(2026, 7, 10),
-                            ReservationStatusId = 3
-                        });
                 });
 
             modelBuilder.Entity("Padelito.Domain.Entities.ReservationAudit", b =>
@@ -763,71 +487,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                     b.HasIndex("ReservationId");
 
                     b.ToTable("ReservationAudits", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 9001,
-                            Action = "Creacion",
-                            CreatedAt = new DateTime(2026, 7, 8, 10, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Reserva demo creada para Lucía Fernández en cancha Central Demo.",
-                            ReservationId = 9001,
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 9002,
-                            Action = "CambioEstado",
-                            CreatedAt = new DateTime(2026, 7, 9, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Estado cambiado de Confirmada a Finalizada.",
-                            ReservationId = 9001,
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 9003,
-                            Action = "Creacion",
-                            CreatedAt = new DateTime(2026, 7, 8, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Reserva demo creada para Martín Sosa en cancha Norte Demo.",
-                            ReservationId = 9002,
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 9004,
-                            Action = "Creacion",
-                            CreatedAt = new DateTime(2026, 7, 10, 14, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Reserva demo creada para Valentina Ríos en cancha Central Demo.",
-                            ReservationId = 9003,
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 9005,
-                            Action = "Creacion",
-                            CreatedAt = new DateTime(2026, 7, 11, 16, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Reserva demo creada para Nicolás Acosta en cancha Norte Demo.",
-                            ReservationId = 9004,
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 9006,
-                            Action = "Creacion",
-                            CreatedAt = new DateTime(2026, 7, 9, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Reserva demo creada para Lucía Fernández en cancha Arena Demo.",
-                            ReservationId = 9005,
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 9007,
-                            Action = "CambioEstado",
-                            CreatedAt = new DateTime(2026, 7, 9, 10, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Estado cambiado de Pendiente a Cancelada.",
-                            ReservationId = 9005,
-                            Username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("Padelito.Domain.Entities.ReservationStatus", b =>
@@ -952,18 +611,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            EmployeeId = 1,
-                            IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAED2SFjyZfFosfjAmmH1n5FHdE59w+9e6K96p468HR/FvY6jo4v94M+pMCLf/9mpNhA==",
-                            RoleId = 1,
-                            Username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("Padelito.Domain.Entities.AvailableTurn", b =>

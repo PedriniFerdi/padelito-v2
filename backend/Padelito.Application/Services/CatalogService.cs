@@ -51,7 +51,17 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task<IReadOnlyList<EmployeeListDto>> GetEmployeesAsync(int clubId, CancellationToken cancellationToken)
     {
-        return (await repository.GetEmployeesAsync(clubId, cancellationToken)).Select(ToEmployeeListDto).ToList();
+        return (await repository.GetEmployeesAsync(clubId, cancellationToken))
+            .Select(employee => new EmployeeListDto(
+                employee.Id,
+                employee.FirstName,
+                employee.LastName,
+                employee.Dni,
+                employee.Phone,
+                employee.Email,
+                employee.IsActive,
+                employee.HasUser))
+            .ToList();
     }
 
     public async Task<EmployeeDetailDto> GetEmployeeAsync(int id, CancellationToken cancellationToken)
@@ -278,10 +288,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     {
         ValidateTurn(request.StartTime, request.EndTime);
         var court = await RequireCourtAsync(request.CourtId, cancellationToken);
-        if (await repository.AvailableTurnExistsAsync(request.CourtId, request.StartTime, request.EndTime, null, cancellationToken))
-        {
-            throw new BusinessException("Ya existe ese turno para la cancha indicada.");
-        }
+        await EnsureTurnDoesNotOverlapAsync(request.CourtId, request.StartTime, request.EndTime, null, cancellationToken);
 
         var turn = new AvailableTurn { CourtId = request.CourtId, Court = court, StartTime = request.StartTime, EndTime = request.EndTime, IsActive = true };
         await repository.AddAvailableTurnAsync(turn, cancellationToken);
@@ -294,9 +301,9 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var turn = await repository.GetAvailableTurnAsync(id, cancellationToken) ?? throw new BusinessException("El turno no existe.");
         ValidateTurn(request.StartTime, request.EndTime);
         var court = await RequireCourtAsync(request.CourtId, cancellationToken);
-        if (await repository.AvailableTurnExistsAsync(request.CourtId, request.StartTime, request.EndTime, id, cancellationToken))
+        if (turn.IsActive)
         {
-            throw new BusinessException("Ya existe ese turno para la cancha indicada.");
+            await EnsureTurnDoesNotOverlapAsync(request.CourtId, request.StartTime, request.EndTime, id, cancellationToken);
         }
 
         turn.CourtId = request.CourtId;
@@ -310,6 +317,11 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     public async Task SetAvailableTurnActiveAsync(int id, bool isActive, CancellationToken cancellationToken)
     {
         var turn = await repository.GetAvailableTurnAsync(id, cancellationToken) ?? throw new BusinessException("El turno no existe.");
+        if (isActive && !turn.IsActive)
+        {
+            await EnsureTurnDoesNotOverlapAsync(turn.CourtId, turn.StartTime, turn.EndTime, turn.Id, cancellationToken);
+        }
+
         turn.IsActive = isActive;
         await repository.SaveChangesAsync(cancellationToken);
     }
@@ -435,6 +447,24 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         }
     }
 
+    private async Task EnsureTurnDoesNotOverlapAsync(
+        int courtId,
+        TimeOnly startTime,
+        TimeOnly endTime,
+        int? excludingId,
+        CancellationToken cancellationToken)
+    {
+        if (await repository.AvailableTurnOverlapsAsync(
+            courtId,
+            startTime,
+            endTime,
+            excludingId,
+            cancellationToken))
+        {
+            throw new BusinessException("El horario se superpone con otro turno activo de la misma cancha.");
+        }
+    }
+
     private static void ValidatePromotion(string name, decimal discountPercentage, DateOnly dateFrom, DateOnly dateTo)
     {
         _ = RequireText(name, "El nombre de la promocion es obligatorio.", 80);
@@ -534,22 +564,17 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static ClientListDto ToClientListDto(Client client)
     {
-        return new ClientListDto(client.Id, client.Person.FirstName, client.Person.LastName, client.Person.Dni, client.Person.Phone, client.Person.Email, client.Person.IsActive);
+        return new ClientListDto(client.Id, client.Person.FirstName, client.Person.LastName, client.Person.Dni ?? string.Empty, client.Person.Phone ?? string.Empty, client.Person.Email ?? string.Empty, client.Person.IsActive);
     }
 
     private static ClientDetailDto ToClientDetailDto(Client client)
     {
-        return new ClientDetailDto(client.Id, client.Person.FirstName, client.Person.LastName, client.Person.Dni, client.Person.Phone, client.Person.Email, client.Person.IsActive);
-    }
-
-    private static EmployeeListDto ToEmployeeListDto(Employee employee)
-    {
-        return new EmployeeListDto(employee.Id, employee.Person.FirstName, employee.Person.LastName, employee.Person.Dni, employee.Person.Phone, employee.Person.Email, employee.Person.IsActive, employee.User is not null);
+        return new ClientDetailDto(client.Id, client.Person.FirstName, client.Person.LastName, client.Person.Dni ?? string.Empty, client.Person.Phone ?? string.Empty, client.Person.Email ?? string.Empty, client.Person.IsActive);
     }
 
     private static EmployeeDetailDto ToEmployeeDetailDto(Employee employee)
     {
-        return new EmployeeDetailDto(employee.Id, employee.Person.FirstName, employee.Person.LastName, employee.Person.Dni, employee.Person.Phone, employee.Person.Email, employee.Person.IsActive, employee.User is not null);
+        return new EmployeeDetailDto(employee.Id, employee.Person.FirstName, employee.Person.LastName, employee.Person.Dni ?? string.Empty, employee.Person.Phone ?? string.Empty, employee.Person.Email ?? string.Empty, employee.Person.IsActive, employee.User is not null);
     }
 
     private static UserListDto ToUserListDto(User user)
