@@ -1,6 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5211'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
-let getAuthToken: (() => string | null) | null = null
 let handleUnauthorized: (() => void) | null = null
 
 export class ApiRequestError extends Error {
@@ -12,10 +11,6 @@ export class ApiRequestError extends Error {
   }
 }
 
-export function setAuthTokenProvider(provider: () => string | null) {
-  getAuthToken = provider
-}
-
 export function setUnauthorizedHandler(handler: () => void) {
   handleUnauthorized = handler
 }
@@ -24,12 +19,11 @@ export async function apiFetch<TResponse>(
   path: string,
   init?: RequestInit,
 ): Promise<TResponse> {
-  const token = getAuthToken?.()
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
   })
@@ -50,9 +44,8 @@ export async function apiFetch<TResponse>(
 }
 
 export async function apiDownload(path: string): Promise<Blob> {
-  const token = getAuthToken?.()
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
   })
   if (!response.ok) {
     if (response.status === 401) handleUnauthorized?.()

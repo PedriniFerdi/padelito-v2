@@ -19,7 +19,6 @@ export type LoginRequest = {
 }
 
 export type AuthResponse = {
-  token: string
   expiresAt: string
   user: CurrentUser
 }
