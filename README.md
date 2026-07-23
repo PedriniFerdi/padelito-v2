@@ -1,134 +1,278 @@
 # Padelito v2
 
-> Despliegue en MonsterASP.NET Free: [`docs/MONSTERASP_FREE_DEPLOY.md`](docs/MONSTERASP_FREE_DEPLOY.md)
+**A full-stack operations platform for padel clubs.**
 
-Sistema web de gestión interna para clubes de pádel. Centraliza clientes, canchas, turnos, promociones, reservas, pagos, reportes y auditoría en un backoffice protegido por roles.
+Padelito helps club staff run bookings, payments, customer records, and daily
+operations from one role-protected back office. It combines a React SPA with an
+ASP.NET Core API and a SQL Server data model designed around operational and
+financial consistency.
 
-![Reporte operativo de reservas](docs/screenshots/reports.png)
+![Padelito revenue and occupancy dashboard](docs/screenshots/dashboard.png)
 
-## Funcionalidades
+## The problem
 
-- Autenticación JWT con contraseñas hasheadas y permisos por rol.
-- Gestión de clientes, empleados, usuarios, canchas, turnos y promociones.
-- Reservas con disponibilidad, prevención de doble ocupación, cálculo por duración y descuentos.
-- Estados de reserva controlados y trazabilidad de cada cambio.
-- Pagos parciales o totales con prevención transaccional de sobrepagos.
-- Dashboard diario con métricas y últimas reservas.
-- Reporte por fechas y estado con totales reservados, cobrados y pendientes.
-- Exportación CSV UTF-8 compatible con Excel.
-- Auditoría administrativa por fecha, reserva, acción y usuario.
+Padel clubs coordinate a deceptively complex daily operation. Staff need to know
+which courts are available, prevent conflicting bookings, collect partial or full
+payments, apply promotions, and keep a reliable history of every change.
 
-## Recorrido visual
+When these workflows live in spreadsheets, chat messages, and disconnected
+tools, clubs face recurring problems:
 
-| Acceso seguro | Operación diaria |
+- Double bookings and overlapping court schedules.
+- Unclear balances and accidental overpayments.
+- Slow check-in, payment, and reservation status workflows.
+- Limited visibility into revenue, occupancy, and demand.
+- No trustworthy answer to who changed a reservation and when.
+- Different access requirements for administrators, receptionists, and staff.
+
+## The solution
+
+Padelito centralizes the club's operational workflow in a single application. A
+staff member can move from today's schedule to booking management, payment
+collection, reporting, and audit history without changing tools.
+
+The product is intentionally an internal operations system rather than a public
+booking marketplace. This keeps the current scope focused on the workflows where
+club staff need speed, consistency, and control.
+
+## Product walkthrough
+
+### Reservation operations
+
+Staff can filter active and historical reservations, create bookings from real
+availability, collect an outstanding balance, and move a reservation through its
+allowed status transitions.
+
+![Current reservation management screen](docs/screenshots/reservations.png)
+
+### Payments and balances
+
+Payments can be partial or complete. The payment flow exposes the remaining
+balance and prevents concurrent requests from pushing the collected amount above
+the reservation total.
+
+![Payment registration flow](docs/screenshots/payments.png)
+
+### Reporting and auditability
+
+Operational reports bring booked value, collected revenue, and outstanding
+balances into the same view. Administrators can trace reservation creation and
+status changes back to the responsible user.
+
+| Financial reporting | Reservation audit trail |
 | --- | --- |
-| ![Login de Padelito](docs/screenshots/login.png) | ![Dashboard de Padelito](docs/screenshots/dashboard.png) |
+| ![Reservation financial report](docs/screenshots/reports.png) | ![Reservation audit history](docs/screenshots/audit.png) |
 
-| Reservas | Auditoría |
-| --- | --- |
-| ![Agenda de reservas](docs/screenshots/reservations.png) | ![Auditoría de reservas](docs/screenshots/audit.png) |
+### Secure staff access
 
-## Stack y arquitectura
+The application provides a dedicated staff login and exposes modules according
+to the authenticated user's role.
 
-El backend usa .NET 10, ASP.NET Core Web API, Entity Framework Core y SQL Server. Está separado en cuatro proyectos:
+![Padelito staff login](docs/screenshots/login.png)
 
-- `Padelito.Domain`: entidades y constantes del dominio.
-- `Padelito.Application`: DTOs, servicios, validaciones e interfaces.
-- `Padelito.Infrastructure`: DbContext, repositorios, migraciones y seed.
-- `Padelito.Api`: controllers, JWT, autorización, CORS, Swagger y composición de dependencias.
+## Core features
 
-El frontend es una SPA con React 19, TypeScript, Vite, Tailwind CSS, TanStack Query, React Hook Form y Zod.
+- Daily operations board grouped by court, with upcoming bookings and balances.
+- Availability-based booking with conflict prevention and cancelled-slot reuse.
+- Controlled reservation lifecycle: pending, confirmed, completed, or cancelled.
+- Duration-based pricing and optional date-bound promotions.
+- Partial and full payments with live outstanding-balance calculation.
+- Revenue, occupancy, demand, cancellation, and promotion analytics.
+- Date and status reporting with UTF-8 CSV export.
+- Administrative audit trail for reservation creation and status changes.
+- Management of clients, employees, users, courts, schedules, and promotions.
+- Role-based access for administrators, receptionists, and employees.
+- Club-scoped reads and writes to keep tenant data isolated.
+
+## Architecture
+
+The backend follows a layered architecture with dependencies pointing toward the
+domain and application contracts:
 
 ```text
-padelito-v2/
-├── backend/
-│   ├── Padelito.Api/
-│   ├── Padelito.Application/
-│   ├── Padelito.Application.Tests/
-│   ├── Padelito.Domain/
-│   └── Padelito.Infrastructure/
-├── frontend/
-└── docs/screenshots/
+React SPA
+   |
+   | HTTP / JSON
+   v
+Padelito.Api
+   |-- Controllers, authentication, authorization, security headers
+   |
+   v
+Padelito.Application
+   |-- Use cases, DTOs, business rules, repository interfaces
+   |
+   +---------------------> Padelito.Domain
+   |                       Entities and domain constants
+   v
+Padelito.Infrastructure
+   |-- EF Core, repositories, migrations, production bootstrap
+   v
+SQL Server
 ```
 
-## Puesta en marcha
+| Layer | Responsibility |
+| --- | --- |
+| `Padelito.Domain` | Core entities and reservation status constants. |
+| `Padelito.Application` | Business services, DTOs, validation, and interfaces. |
+| `Padelito.Infrastructure` | EF Core persistence, repositories, migrations, and seed data. |
+| `Padelito.Api` | HTTP endpoints, dependency injection, JWT authentication, authorization, and production hosting. |
+| `frontend` | React application, server-state management, forms, validation, and responsive UI. |
 
-Requisitos:
+### Technology stack
 
-- .NET SDK 10
-- Node.js y npm
-- SQL Server local
+**Backend:** .NET 10, ASP.NET Core Web API, Entity Framework Core, SQL Server,
+xUnit, and Swagger/OpenAPI.
 
-La configuración de desarrollo espera una base `PADELITO_V2_DB` en `localhost` con autenticación integrada. Puede ajustarse en `backend/Padelito.Api/appsettings.Development.json`.
+**Frontend:** React 19, TypeScript, Vite, Tailwind CSS, TanStack Query, React Hook
+Form, Zod, Lucide icons, and oxlint.
 
-Desde `backend/`, aplicar las migraciones:
+## Technical decisions
+
+### Enforce critical rules twice
+
+The application layer returns clear business errors before writing data, while
+the database remains the final authority under concurrency:
+
+- A filtered unique index prevents two active reservations from claiming the
+  same date and time slot.
+- A SQL Server trigger prevents overlapping active schedules for the same court,
+  including writes from another application instance or direct SQL.
+- Payment creation runs in a serializable transaction and recalculates the
+  committed balance before accepting the payment.
+
+This separates user-friendly validation from correctness guarantees.
+
+### Keep authorization on the server
+
+The frontend hides modules users cannot access, but API policies are the actual
+security boundary. JWTs are stored in `HttpOnly`, `SameSite=Strict` cookies;
+production cookies are also marked `Secure`. Passwords are stored with ASP.NET
+Core's password hasher.
+
+### Make tenant scope explicit
+
+The authenticated user carries a club identifier, and operational repository
+queries scope reservations, payments, reports, and audits to that club. Tenant
+isolation is therefore enforced in backend queries rather than relying on UI
+filters.
+
+### Treat time as a business rule
+
+The club time zone is configurable. Date filters are converted to UTC boundaries
+at the application edge so dashboards and payment reports remain consistent with
+the club's local operating day.
+
+### Separate server state from UI state
+
+TanStack Query owns API state, loading and error states, and cache invalidation
+after mutations. React Hook Form and Zod handle form state and client-side input
+validation. The API still validates every business rule.
+
+### Ship the SPA and API as one production artifact
+
+During publish, the API project builds the frontend and includes its `dist`
+output in `wwwroot`. ASP.NET Core serves the SPA fallback and API from the same
+origin, which simplifies cookie authentication, deployment, and CORS in
+production.
+
+## Testing
+
+The backend currently contains 51 passing xUnit tests covering business services
+and HTTP integration scenarios, including:
+
+- Login and role-protected endpoints.
+- Reservation pricing, availability, conflicts, and status transitions.
+- Partial payments, overpayment prevention, and concurrent balance changes.
+- Dashboard and report calculations.
+- JSON and CSV report responses.
+- Club-level data isolation.
+- Audit trail creation and filtering.
+- Production bootstrap validation.
+
+The frontend is verified through TypeScript compilation, a production Vite
+build, and oxlint.
+
+## Run locally
+
+### Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js](https://nodejs.org/) with npm
+- A local SQL Server instance
+
+The development configuration expects SQL Server at `localhost` with Windows
+integrated authentication and creates/uses a database named `PADELITO_V2_DB`.
+Change `backend/Padelito.Api/appsettings.Development.json` if your environment is
+different.
+
+### 1. Restore tools and apply migrations
+
+From the repository root:
 
 ```bash
 dotnet tool restore
-dotnet tool run dotnet-ef database update --project Padelito.Infrastructure --startup-project Padelito.Api
+dotnet tool run dotnet-ef database update --project backend/Padelito.Infrastructure --startup-project backend/Padelito.Api
 ```
 
-Iniciar la API:
+The migrations create the schema and load a complete demo dataset with clients,
+courts, schedules, promotions, reservations, payments, and audit events.
+
+### 2. Start the API
 
 ```bash
-dotnet run --project Padelito.Api --launch-profile http
+dotnet run --project backend/Padelito.Api --launch-profile http
 ```
 
-Swagger queda disponible en `http://localhost:5211/swagger`.
+The API runs at `http://localhost:5211`. Swagger is available at
+`http://localhost:5211/swagger` in development.
 
-En otra terminal, desde `frontend/`:
+### 3. Start the frontend
+
+In a second terminal:
 
 ```bash
-npm install
+cd frontend
+npm ci
 npm run dev
 ```
 
-Abrir `http://localhost:5173` o `http://127.0.0.1:5173`.
+Open `http://localhost:5173`.
 
-### Credenciales demo
+### Demo credentials
 
 ```text
-Usuario: admin
-Contraseña: admin123
+Username: admin
+Password: admin123
 ```
 
-El seed incluye clientes, tres canchas, turnos, una promoción, reservas en diferentes estados, pagos completos/parciales y eventos de auditoría. Los IDs demo usan el rango `9001+` para evitar colisiones con datos locales existentes.
+## Validate the project
 
-## Flujo principal
-
-1. El staff inicia sesión y consulta la disponibilidad.
-2. Crea una reserva para un cliente activo.
-3. El backend calcula precio, promoción y registra la auditoría.
-4. Recepción registra uno o más pagos sin superar el saldo.
-5. El reporte refleja precio final, total cobrado y saldo pendiente.
-6. Administración consulta quién creó o modificó la reserva.
-
-## Permisos
-
-| Módulo | Administrador | Recepción | Empleado |
-| --- | :---: | :---: | :---: |
-| Dashboard | Sí | Sí | Sí |
-| Clientes, reservas y pagos | Sí | Sí | No |
-| Reportes | Sí | Sí | No |
-| Empleados, usuarios y configuración | Sí | No | No |
-| Auditoría | Sí | No | No |
-
-Los permisos se validan en la API mediante policies; ocultar opciones en el frontend no reemplaza la autorización del servidor.
-
-## Validación
-
-Desde `backend/`:
+Run the backend build and test suite from the repository root:
 
 ```bash
-dotnet test PadelitoV2.slnx
-dotnet build PadelitoV2.slnx
+dotnet build backend/PadelitoV2.slnx
+dotnet test backend/PadelitoV2.slnx
 ```
 
-Desde `frontend/`:
+Run the frontend checks from `frontend`:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-La suite incluye pruebas de negocio e integración HTTP para login, reserva, pago, reporte JSON, CSV, aislamiento por club y auditoría.
+## Repository structure
+
+```text
+padelito-v2/
+|-- backend/
+|   |-- Padelito.Api/
+|   |-- Padelito.Application/
+|   |-- Padelito.Application.Tests/
+|   |-- Padelito.Domain/
+|   `-- Padelito.Infrastructure/
+|-- frontend/
+|-- docs/
+|   `-- screenshots/
+`-- README.md
+```
