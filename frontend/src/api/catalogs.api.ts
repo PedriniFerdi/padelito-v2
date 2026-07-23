@@ -66,7 +66,7 @@ export const clientsApi = {
 }
 
 export const employeesApi = {
-  list: () => apiFetch<Employee[]>('/api/employees'),
+  list: () => apiFetch<Employee[]>('/api/employees', { cache: 'no-store' }),
   create: (payload: PersonPayload) => send<Employee>('/api/employees', 'POST', payload),
   update: (id: number, payload: PersonPayload) => send<Employee>(`/api/employees/${id}`, 'PUT', payload),
   activate: (id: number) => send<void>(`/api/employees/${id}/activate`, 'PATCH'),

@@ -11,6 +11,7 @@ import {
 import { clientsApi, promotionsApi } from '@/api/catalogs.api'
 import type { Promotion, Reservation, ReservationAvailability, ReservationStatus } from '@/types/api'
 import { reservationSchema, toFieldErrors, type FieldErrors } from '@/lib/validation'
+import { todayInClub } from '@/lib/dates'
 
 const statusIds = {
   Pendiente: 1,
@@ -21,17 +22,6 @@ const statusIds = {
 
 const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })
 const dateFormatter = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
-
-function todayInClub() {
-  const parts = new Intl.DateTimeFormat('en', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]))
-  return `${value.year}-${value.month}-${value.day}`
-}
 
 function errorMessage(error: unknown) {
   return error instanceof ApiRequestError ? error.message : 'No se pudo completar la operación.'
