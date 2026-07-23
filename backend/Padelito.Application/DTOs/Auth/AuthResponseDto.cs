@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Padelito.Application.DTOs.Auth;
 
 public sealed class AuthResponseDto
 {
-    public required string Token { get; init; }
+    [JsonIgnore]
+    public string Token { get; init; } = string.Empty;
     public DateTime ExpiresAt { get; init; }
     public required CurrentUserDto User { get; init; }
 }

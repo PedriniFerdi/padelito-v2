@@ -11,3 +11,7 @@ export function login(request: LoginRequest) {
 export function fetchCurrentUser() {
   return apiFetch<CurrentUser>('/api/auth/me')
 }
+
+export function logout() {
+  return apiFetch<void>('/api/auth/logout', { method: 'POST' })
+}
