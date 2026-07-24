@@ -23,6 +23,16 @@ public sealed class ReservationRepository(PadelitoDbContext dbContext) : IReserv
         return DetailsQuery(trackChanges).FirstOrDefaultAsync(x => x.Id == id && x.AvailableTurn.Court.ClubId == clubId, cancellationToken);
     }
 
+    public Task<List<Reservation>> GetOperationsBoardReservationsAsync(int clubId, DateOnly date, CancellationToken cancellationToken)
+    {
+        return DetailsQuery(false)
+            .Where(x => x.AvailableTurn.Court.ClubId == clubId && x.ReservationDate == date)
+            .OrderBy(x => x.AvailableTurn.Court.Name)
+            .ThenBy(x => x.AvailableTurn.StartTime)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<List<AvailableTurn>> GetAvailabilityAsync(int clubId, DateOnly date, CancellationToken cancellationToken)
     {
         return dbContext.AvailableTurns
@@ -65,7 +75,7 @@ public sealed class ReservationRepository(PadelitoDbContext dbContext) : IReserv
         }
         catch (DbUpdateException exception) when (exception.GetBaseException() is SqlException { Number: 2601 or 2627 })
         {
-            throw new ConflictException("El turno ya está reservado para la fecha seleccionada.");
+            throw new ConflictException("The selected time slot is already reserved for that date.");
         }
     }
 

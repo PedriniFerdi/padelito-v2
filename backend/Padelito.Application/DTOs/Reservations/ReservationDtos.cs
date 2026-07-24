@@ -58,11 +58,44 @@ public sealed record ReservationAvailabilityDto(
     TimeOnly EndTime,
     decimal BasePrice);
 
+public sealed record OperationsBoardDto(
+    DateOnly OperationalDate,
+    DateTimeOffset GeneratedAt,
+    int ReservationsToday,
+    int UpcomingUnpaidCount,
+    int StartingSoonCount,
+    int CompletedCount,
+    IReadOnlyList<OperationsCourtTimelineDto> TimelineByCourt,
+    IReadOnlyList<OperationsReservationDto> UpcomingUnpaidReservations,
+    IReadOnlyList<OperationsReservationDto> StartingSoonReservations);
+
+public sealed record OperationsCourtTimelineDto(
+    int CourtId,
+    string CourtName,
+    IReadOnlyList<OperationsReservationDto> Reservations);
+
+public sealed record OperationsReservationDto(
+    int Id,
+    DateOnly ReservationDate,
+    int ClientId,
+    string ClientName,
+    int AvailableTurnId,
+    int CourtId,
+    string CourtName,
+    TimeOnly StartTime,
+    TimeOnly EndTime,
+    int ReservationStatusId,
+    string Status,
+    decimal FinalPrice,
+    decimal TotalPaid,
+    decimal PendingBalance,
+    string PaymentStatus);
+
 public sealed record ReservationCreateDto(
-    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un cliente.")] int ClientId,
-    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un turno.")] int AvailableTurnId,
+    [Range(1, int.MaxValue, ErrorMessage = "Select a customer.")] int ClientId,
+    [Range(1, int.MaxValue, ErrorMessage = "Select a time slot.")] int AvailableTurnId,
     int? PromotionId,
     DateOnly ReservationDate,
-    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un estado.")] int ReservationStatusId);
+    [Range(1, int.MaxValue, ErrorMessage = "Select a status.")] int ReservationStatusId);
 
-public sealed record ReservationChangeStatusDto([Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un estado.")] int ReservationStatusId);
+public sealed record ReservationChangeStatusDto([Range(1, int.MaxValue, ErrorMessage = "Select a status.")] int ReservationStatusId);

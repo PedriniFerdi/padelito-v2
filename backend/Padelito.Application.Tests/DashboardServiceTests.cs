@@ -97,7 +97,7 @@ public sealed class DashboardServiceTests
             EmployeeId = 1,
             ReservationDate = date,
             ReservationStatusId = statusId,
-            ReservationStatus = new ReservationStatus { Id = statusId, Name = statusId == ReservationStatusIds.Cancelled ? "Cancelada" : "Confirmada" },
+            ReservationStatus = new ReservationStatus { Id = statusId, Name = statusId == ReservationStatusIds.Cancelled ? "Canceled" : "Confirmed" },
             PromotionId = promotion?.Id,
             Promotion = promotion,
             BasePrice = basePrice ?? finalPrice,

@@ -22,6 +22,12 @@ public sealed class ClientsController(ICatalogService catalogService) : CatalogC
         return HandleAsync(() => catalogService.GetClientAsync(id, cancellationToken));
     }
 
+    [HttpGet("{id:int}/profile")]
+    public Task<ActionResult<ClientProfileDto>> GetProfile(int id, CancellationToken cancellationToken)
+    {
+        return HandleAsync(() => catalogService.GetClientProfileAsync(id, CurrentClubId, cancellationToken));
+    }
+
     [HttpPost]
     public Task<ActionResult<ClientDetailDto>> Create(ClientCreateDto request, CancellationToken cancellationToken)
     {

@@ -29,8 +29,8 @@ public static partial class ProductionBootstrapper
         }
 
         var values = ReadAndValidate(configuration);
-        var adminRole = await dbContext.Roles.SingleOrDefaultAsync(x => x.Name == "Administrador", cancellationToken)
-            ?? throw new InvalidOperationException("The Administrador role is missing. Apply database migrations before enabling bootstrap.");
+        var adminRole = await dbContext.Roles.SingleOrDefaultAsync(x => x.Name == "Admin", cancellationToken)
+            ?? throw new InvalidOperationException("The Admin role is missing. Apply database migrations before enabling bootstrap.");
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var now = DateTime.UtcNow;
@@ -107,7 +107,7 @@ public static partial class ProductionBootstrapper
         var dni = NonDigitsRegex().Replace(Required("Bootstrap:AdminDni", 20), string.Empty);
         if (dni.Length is < 7 or > 10)
         {
-            throw new InvalidOperationException("Bootstrap administrator DNI is invalid.");
+            throw new InvalidOperationException("Bootstrap administrator Customer ID is invalid.");
         }
 
         return new BootstrapValues(

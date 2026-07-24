@@ -7,6 +7,7 @@ public interface ICatalogService
     Task<IReadOnlyList<PaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyList<ClientListDto>> GetClientsAsync(CancellationToken cancellationToken);
     Task<ClientDetailDto> GetClientAsync(int id, CancellationToken cancellationToken);
+    Task<ClientProfileDto> GetClientProfileAsync(int id, int clubId, CancellationToken cancellationToken);
     Task<ClientDetailDto> CreateClientAsync(ClientCreateDto request, CancellationToken cancellationToken);
     Task<ClientDetailDto> UpdateClientAsync(int id, ClientUpdateDto request, CancellationToken cancellationToken);
     Task SetClientActiveAsync(int id, bool isActive, CancellationToken cancellationToken);

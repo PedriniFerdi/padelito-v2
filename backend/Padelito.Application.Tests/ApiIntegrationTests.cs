@@ -43,7 +43,7 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
         var createdResponse = await client.PostAsJsonAsync("/api/reservations", new ReservationCreateDto(9001, 9001, null, new(2026, 7, 14), 2));
         createdResponse.EnsureSuccessStatusCode();
         var created = await createdResponse.Content.ReadFromJsonAsync<ReservationDetailDto>();
-        var paymentResponse = await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(created!.Id, 1, created.FinalPrice, new(2026,7,12,15,0,0,DateTimeKind.Utc), "Integración"));
+        var paymentResponse = await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(created!.Id, 1, created.FinalPrice, new(2026,7,12,15,0,0,DateTimeKind.Utc), "IntegraciÃ³n"));
         paymentResponse.EnsureSuccessStatusCode();
 
         var report = await client.GetFromJsonAsync<ReservationReportDto>("/api/reports/reservations?dateFrom=2026-07-14&dateTo=2026-07-14");
@@ -55,10 +55,10 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
         var csv = await client.GetAsync("/api/reports/reservations/export?dateFrom=2026-07-14&dateTo=2026-07-14");
         csv.EnsureSuccessStatusCode();
         Assert.Equal("text/csv", csv.Content.Headers.ContentType!.MediaType);
-        Assert.Contains("Lucía", await csv.Content.ReadAsStringAsync());
+        Assert.Contains("LucÃ­a", await csv.Content.ReadAsStringAsync());
 
         var audits = await client.GetFromJsonAsync<List<ReservationAuditListDto>>($"/api/audit/reservations?reservationId={created.Id}");
-        Assert.Contains(audits!, x => x.Action == "Creacion" && x.Username == "admin");
+        Assert.Contains(audits!, x => x.Action == "Created" && x.Username == "admin");
     }
 
     [Fact]
@@ -83,12 +83,61 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
     }
 
     [Fact]
+    public async Task Operations_board_endpoint_returns_today_work_for_authenticated_staff()
+    {
+        using var client = await CreateAuthenticatedClientAsync();
+
+        var board = await client.GetFromJsonAsync<OperationsBoardDto>("/api/reservations/operations-board");
+
+        Assert.NotNull(board);
+        Assert.Equal(new DateOnly(2026, 7, 12), board!.OperationalDate);
+        Assert.Empty(board.TimelineByCourt);
+    }
+
+    [Fact]
+    public async Task Client_profile_endpoint_returns_lifetime_value_metrics()
+    {
+        using var client = await CreateAuthenticatedClientAsync();
+        var clientResponse = await client.PostAsJsonAsync("/api/clients", new ClientCreateDto("Mora", "Diaz", "42123456", "1140002002", "mora@example.com"));
+        clientResponse.EnsureSuccessStatusCode();
+        var profileClient = await clientResponse.Content.ReadFromJsonAsync<ClientDetailDto>();
+
+        var firstCompleted = await CreateReservationAsync(client, profileClient!.Id, new(2026, 8, 3), 2);
+        var secondCompleted = await CreateReservationAsync(client, profileClient.Id, new(2026, 8, 10), 2);
+        var thirdCompleted = await CreateReservationAsync(client, profileClient.Id, new(2026, 8, 12), 2);
+        var confirmed = await CreateReservationAsync(client, profileClient.Id, new(2026, 8, 13), 2);
+        _ = await CreateReservationAsync(client, profileClient.Id, new(2026, 8, 14), 1);
+        var cancelled = await CreateReservationAsync(client, profileClient.Id, new(2026, 8, 15), 2);
+
+        (await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(firstCompleted.Id, 1, 1000m, new(2026, 8, 3, 15, 0, 0, DateTimeKind.Utc), "Perfil"))).EnsureSuccessStatusCode();
+        (await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(secondCompleted.Id, 1, 2000m, new(2026, 8, 10, 15, 0, 0, DateTimeKind.Utc), "Perfil"))).EnsureSuccessStatusCode();
+        (await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(confirmed.Id, 1, 3000m, new(2026, 8, 13, 15, 0, 0, DateTimeKind.Utc), "Perfil"))).EnsureSuccessStatusCode();
+
+        (await client.PatchAsJsonAsync($"/api/reservations/{firstCompleted.Id}/status", new ReservationChangeStatusDto(4))).EnsureSuccessStatusCode();
+        (await client.PatchAsJsonAsync($"/api/reservations/{secondCompleted.Id}/status", new ReservationChangeStatusDto(4))).EnsureSuccessStatusCode();
+        (await client.PatchAsJsonAsync($"/api/reservations/{thirdCompleted.Id}/status", new ReservationChangeStatusDto(4))).EnsureSuccessStatusCode();
+        (await client.PatchAsJsonAsync($"/api/reservations/{cancelled.Id}/status", new ReservationChangeStatusDto(3))).EnsureSuccessStatusCode();
+
+        var profile = await client.GetFromJsonAsync<ClientProfileDto>($"/api/clients/{profileClient.Id}/profile");
+
+        Assert.NotNull(profile);
+        Assert.Equal(6, profile!.TotalReservations);
+        Assert.Equal(6000m, profile.TotalPaid);
+        Assert.Equal(129000m, profile.PendingBalance);
+        Assert.Equal("Monday", profile.FavoriteDayName);
+        Assert.Equal(new TimeOnly(10, 0), profile.FavoriteStartTime);
+        Assert.Equal(new DateOnly(2026, 8, 12), profile.LastVisitDate);
+        Assert.Equal(1, profile.CancellationCount);
+    }
+
+    [Fact]
     public async Task Endpoints_require_authentication()
     {
         using var client = factory.CreateClient();
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/reports/reservations")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/audit/reservations")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/dashboard/revenue-intelligence")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/reservations/operations-board")).StatusCode);
     }
 
     [Fact]
@@ -135,7 +184,7 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
         Assert.Equal("ana@example.com", created.Email);
 
         var duplicate = await client.PostAsJsonAsync("/api/employees", new EmployeeCreateDto(
-            "Otra", "Persona", "40123456", "1144445555", "otra@example.com"));
+            "Otra", "Person", "40123456", "1144445555", "otra@example.com"));
         Assert.Equal(HttpStatusCode.BadRequest, duplicate.StatusCode);
     }
 
@@ -160,6 +209,13 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
         var auth = await login.Content.ReadFromJsonAsync<AuthResponseDto>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.Token);
         return client;
+    }
+
+    private static async Task<ReservationDetailDto> CreateReservationAsync(HttpClient client, int clientId, DateOnly date, int statusId)
+    {
+        var response = await client.PostAsJsonAsync("/api/reservations", new ReservationCreateDto(clientId, 9001, null, date, statusId));
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<ReservationDetailDto>())!;
     }
 }
 
@@ -208,8 +264,8 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
         var clientPerson = new Person
         {
             Id = 9001,
-            FirstName = "Lucía",
-            LastName = "Fernández",
+            FirstName = "LucÃ­a",
+            LastName = "FernÃ¡ndez",
             Dni = "35421678",
             Phone = "1158214076",
             Email = "lucia@example.com",

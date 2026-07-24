@@ -6,6 +6,7 @@ public interface ICatalogRepository
 {
     Task<List<Client>> GetClientsAsync(CancellationToken cancellationToken);
     Task<Client?> GetClientAsync(int id, CancellationToken cancellationToken);
+    Task<Client?> GetClientProfileAsync(int id, int clubId, CancellationToken cancellationToken);
     Task AddClientAsync(Client client, CancellationToken cancellationToken);
 
     Task<List<EmployeeReadModel>> GetEmployeesAsync(int clubId, CancellationToken cancellationToken);

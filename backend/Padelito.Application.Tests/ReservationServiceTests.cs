@@ -176,10 +176,10 @@ public sealed class ReservationServiceTests
         var reservation = Assert.Single(fixture.Repository.Reservations);
         var creation = Assert.Single(reservation.Audits);
         Assert.Equal("recepcion", creation.Username);
-        Assert.Equal("Creacion", creation.Action);
+        Assert.Equal("Created", creation.Action);
 
         await fixture.Service.ChangeStatusAsync(reservation.Id, 1, "recepcion", new(ReservationStatusIds.Confirmed), default);
-        Assert.Contains(reservation.Audits, audit => audit.Action == "CambioEstado" && audit.Username == "recepcion");
+        Assert.Contains(reservation.Audits, audit => audit.Action == "StatusChanged" && audit.Username == "recepcion");
     }
 
     [Fact]
@@ -199,17 +199,50 @@ public sealed class ReservationServiceTests
         Assert.All(history, item => Assert.Contains(item.ReservationStatusId, ReservationStatusIds.History));
     }
 
+    [Fact]
+    public async Task OperationsBoard_groups_timeline_and_calculates_payment_work()
+    {
+        var fixture = CreateFixture();
+        var pending = ReservationForStatus(ReservationStatusIds.Pending, 10);
+        pending.Payments.Add(new Payment { Id = 1, ReservationId = pending.Id, Amount = 40 });
+        var confirmed = ReservationForStatus(ReservationStatusIds.Confirmed, 11);
+        confirmed.AvailableTurn = new AvailableTurn
+        {
+            Id = 2,
+            CourtId = 2,
+            Court = new Court { Id = 2, ClubId = 1, CourtTypeId = 1, Name = "Lateral", HourPrice = 120, IsActive = true, CourtType = new CourtType { Id = 1, Description = "Synthetic Turf" } },
+            StartTime = new TimeOnly(12, 30),
+            EndTime = new TimeOnly(13, 30),
+            IsActive = true
+        };
+        confirmed.AvailableTurnId = 2;
+        confirmed.Payments.Add(new Payment { Id = 2, ReservationId = confirmed.Id, Amount = 100 });
+        var cancelled = ReservationForStatus(ReservationStatusIds.Cancelled, 12);
+        fixture.Repository.Reservations.AddRange(pending, confirmed, cancelled);
+
+        var board = await fixture.Service.GetOperationsBoardAsync(1, default);
+
+        Assert.Equal(new DateOnly(2026, 7, 10), board.OperationalDate);
+        Assert.Equal(2, board.ReservationsToday);
+        Assert.Equal(2, board.TimelineByCourt.Count);
+        var unpaid = Assert.Single(board.UpcomingUnpaidReservations);
+        Assert.Equal(pending.Id, unpaid.Id);
+        Assert.Equal(60, unpaid.PendingBalance);
+        var soon = Assert.Single(board.StartingSoonReservations);
+        Assert.Equal(confirmed.Id, soon.Id);
+    }
+
     private static (ReservationService Service, FakeReservationRepository Repository) CreateFixture(int durationMinutes = 60)
     {
         var repository = new FakeReservationRepository();
-        var court = new Court { Id = 1, ClubId = 1, CourtTypeId = 1, Name = "Central", HourPrice = 100, IsActive = true, CourtType = new CourtType { Id = 1, Description = "Sintetico" } };
+        var court = new Court { Id = 1, ClubId = 1, CourtTypeId = 1, Name = "Central", HourPrice = 100, IsActive = true, CourtType = new CourtType { Id = 1, Description = "Synthetic Turf" } };
         repository.Turns[1] = new AvailableTurn { Id = 1, CourtId = 1, Court = court, StartTime = new TimeOnly(14, 0), EndTime = new TimeOnly(14, 0).AddMinutes(durationMinutes), IsActive = true };
         repository.Clients[1] = new Client { Id = 1, PersonId = 2, Person = Person(2, "Ana", "Paz") };
         repository.Employees[1] = new Employee { Id = 1, PersonId = 1, ClubId = 1, Person = Person(1, "Carlos", "Benitez") };
-        repository.Statuses[1] = new ReservationStatus { Id = 1, Name = "Pendiente" };
-        repository.Statuses[2] = new ReservationStatus { Id = 2, Name = "Confirmada" };
-        repository.Statuses[3] = new ReservationStatus { Id = 3, Name = "Cancelada" };
-        repository.Statuses[4] = new ReservationStatus { Id = 4, Name = "Finalizada" };
+        repository.Statuses[1] = new ReservationStatus { Id = 1, Name = "Pending" };
+        repository.Statuses[2] = new ReservationStatus { Id = 2, Name = "Confirmed" };
+        repository.Statuses[3] = new ReservationStatus { Id = 3, Name = "Canceled" };
+        repository.Statuses[4] = new ReservationStatus { Id = 4, Name = "Completed" };
         return (new ReservationService(repository, new FixedTimeProvider(Now), TimeZoneInfo.Utc), repository);
     }
 
@@ -255,6 +288,10 @@ internal sealed class FakeReservationRepository : IReservationRepository
 
     public Task<Reservation?> GetReservationAsync(int id, int clubId, bool trackChanges, CancellationToken cancellationToken) =>
         Task.FromResult(Reservations.FirstOrDefault(x => x.Id == id && x.AvailableTurn.Court.ClubId == clubId));
+
+    public Task<List<Reservation>> GetOperationsBoardReservationsAsync(int clubId, DateOnly date, CancellationToken cancellationToken) =>
+        Task.FromResult(Reservations.Where(x => x.AvailableTurn.Court.ClubId == clubId && x.ReservationDate == date)
+            .OrderBy(x => x.AvailableTurn.Court.Name).ThenBy(x => x.AvailableTurn.StartTime).ThenBy(x => x.Id).ToList());
 
     public Task<List<AvailableTurn>> GetAvailabilityAsync(int clubId, DateOnly date, CancellationToken cancellationToken) =>
         Task.FromResult(Turns.Values.Where(x => x.IsActive && x.Court.IsActive && x.Court.ClubId == clubId && !Reservations.Any(r => r.AvailableTurnId == x.Id && r.ReservationDate == date && r.ReservationStatusId != 3)).ToList());

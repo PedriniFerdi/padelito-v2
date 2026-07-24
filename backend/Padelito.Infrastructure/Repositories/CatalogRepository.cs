@@ -22,6 +22,28 @@ public sealed class CatalogRepository(PadelitoDbContext dbContext) : ICatalogRep
         return dbContext.Clients.Include(x => x.Person).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<Client?> GetClientProfileAsync(int id, int clubId, CancellationToken cancellationToken)
+    {
+        var client = await dbContext.Clients
+            .Include(x => x.Person)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (client is null)
+        {
+            return null;
+        }
+
+        client.Reservations = await dbContext.Reservations
+            .Include(x => x.AvailableTurn)
+            .Include(x => x.Payments)
+            .Where(x => x.ClientId == id && x.AvailableTurn.Court.ClubId == clubId)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return client;
+    }
+
     public async Task AddClientAsync(Client client, CancellationToken cancellationToken)
     {
         await dbContext.Clients.AddAsync(client, cancellationToken);
@@ -185,7 +207,7 @@ public sealed class CatalogRepository(PadelitoDbContext dbContext) : ICatalogRep
         }
         catch (DbUpdateException exception) when (exception.GetBaseException() is SqlException { Number: 51001 })
         {
-            throw new ConflictException("El horario se superpone con otro turno activo de la misma cancha.");
+            throw new ConflictException("The time slot overlaps another active slot for the same court.");
         }
     }
 }

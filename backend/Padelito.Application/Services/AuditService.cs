@@ -10,7 +10,7 @@ public sealed class AuditService(IAuditRepository repository) : IAuditService
     public async Task<IReadOnlyList<ReservationAuditListDto>> GetReservationAuditsAsync(int clubId, ReservationAuditFilterDto filter, CancellationToken cancellationToken)
     {
         if (filter.DateFrom.HasValue && filter.DateTo.HasValue && filter.DateTo < filter.DateFrom)
-            throw new BusinessException("La fecha hasta debe ser mayor o igual a la fecha desde.");
+            throw new BusinessException("End date must be on or after start date.");
 
         var audits = await repository.GetReservationAuditsAsync(
             clubId, filter.DateFrom, filter.DateTo, filter.ReservationId,

@@ -11,7 +11,7 @@ public sealed class PaymentService(IPaymentRepository repository, TimeZoneInfo c
     public async Task<IReadOnlyList<PaymentListDto>> GetPaymentsAsync(int clubId, PaymentFilterDto filter, CancellationToken cancellationToken)
     {
         if (filter.DateFrom.HasValue && filter.DateTo.HasValue && filter.DateTo < filter.DateFrom)
-            throw new BusinessException("La fecha hasta debe ser mayor o igual a la fecha desde.");
+            throw new BusinessException("End date must be on or after start date.");
 
         DateTime? dateFromUtc = filter.DateFrom.HasValue ? ToUtc(filter.DateFrom.Value) : null;
         DateTime? dateToExclusiveUtc = filter.DateTo.HasValue ? ToUtc(filter.DateTo.Value.AddDays(1)) : null;
@@ -21,21 +21,21 @@ public sealed class PaymentService(IPaymentRepository repository, TimeZoneInfo c
 
     public async Task<PaymentListDto> CreateAsync(int clubId, PaymentCreateDto request, CancellationToken cancellationToken)
     {
-        if (request.Amount <= 0) throw new BusinessException("El monto debe ser mayor a cero.");
-        if (request.PaymentDate == default) throw new BusinessException("La fecha de pago es obligatoria.");
+        if (request.Amount <= 0) throw new BusinessException("Amount must be greater than zero.");
+        if (request.PaymentDate == default) throw new BusinessException("Payment date is required.");
         var note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
-        if (note?.Length > 255) throw new BusinessException("La nota no puede superar los 255 caracteres.");
+        if (note?.Length > 255) throw new BusinessException("Note cannot exceed 255 characters.");
 
         var reservation = await repository.GetReservationAsync(request.ReservationId, clubId, cancellationToken)
-            ?? throw new BusinessException("La reserva no existe.");
+            ?? throw new BusinessException("The reservation does not exist.");
         if (reservation.ReservationStatusId == ReservationStatusIds.Cancelled)
-            throw new BusinessException("No se pueden registrar pagos sobre una reserva cancelada.");
+            throw new BusinessException("Payments cannot be recorded for a canceled reservation.");
 
         var method = await repository.GetMethodAsync(request.PaymentMethodId, cancellationToken)
-            ?? throw new BusinessException("El metodo de pago indicado no existe.");
+            ?? throw new BusinessException("The selected payment method does not exist.");
         var totalPaid = reservation.Payments.Sum(x => x.Amount);
         if (totalPaid + request.Amount > reservation.FinalPrice)
-            throw new BusinessException("El monto supera el saldo pendiente de la reserva.");
+            throw new BusinessException("Amount exceeds the reservation outstanding balance.");
 
         var payment = new Payment
         {

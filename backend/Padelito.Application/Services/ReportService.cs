@@ -24,7 +24,7 @@ public sealed class ReportService(IReportRepository repository) : IReportService
     {
         var report = await GetReservationsAsync(clubId, filter, cancellationToken);
         var csv = new StringBuilder();
-        csv.AppendLine("Reserva;Fecha;Hora inicio;Hora fin;Cliente;Cancha;Estado;Promocion;Precio base;Precio final;Pagado;Saldo;Estado de pago");
+        csv.AppendLine("Reservation;Date;Start time;End time;Customer;Court;Status;Promotion;Base price;Final price;Paid;Balance;Payment status");
         foreach (var row in report.Rows)
         {
             csv.AppendLine(string.Join(';', new[]
@@ -48,13 +48,13 @@ public sealed class ReportService(IReportRepository repository) : IReportService
             $"{reservation.Client.Person.FirstName} {reservation.Client.Person.LastName}", reservation.AvailableTurn.Court.Name,
             reservation.ReservationStatusId, reservation.ReservationStatus.Name, reservation.Promotion?.Name,
             reservation.BasePrice, reservation.FinalPrice, paid, balance,
-            paid <= 0 ? "Sin pagos" : balance > 0 ? "Pago parcial" : "Pagada");
+            paid <= 0 ? "Unpaid" : balance > 0 ? "Partially paid" : "Paid");
     }
 
     private static void ValidateRange(DateOnly? from, DateOnly? to)
     {
         if (from.HasValue && to.HasValue && to < from)
-            throw new BusinessException("La fecha hasta debe ser mayor o igual a la fecha desde.");
+            throw new BusinessException("End date must be on or after start date.");
     }
 
     private static string Decimal(decimal value) => value.ToString("0.00", CultureInfo.InvariantCulture);

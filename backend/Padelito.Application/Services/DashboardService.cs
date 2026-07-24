@@ -34,7 +34,7 @@ public sealed class DashboardService(IDashboardRepository repository, TimeProvid
         var dateTo = filter.DateTo ?? defaultTo;
         var dateFrom = filter.DateFrom ?? dateTo.AddDays(-29);
         if (dateTo < dateFrom)
-            throw new BusinessException("La fecha hasta debe ser mayor o igual a la fecha desde.");
+            throw new BusinessException("End date must be on or after start date.");
 
         var data = await repository.GetRevenueIntelligenceAsync(clubId, dateFrom, dateTo, cancellationToken);
         var days = dateTo.DayNumber - dateFrom.DayNumber + 1;
@@ -135,13 +135,13 @@ public sealed class DashboardService(IDashboardRepository repository, TimeProvid
 
     private static string DayName(int dayOfWeek) => dayOfWeek switch
     {
-        0 => "Domingo",
-        1 => "Lunes",
-        2 => "Martes",
-        3 => "Miercoles",
-        4 => "Jueves",
-        5 => "Viernes",
-        6 => "Sabado",
+        0 => "Sunday",
+        1 => "Monday",
+        2 => "Tuesday",
+        3 => "Wednesday",
+        4 => "Thursday",
+        5 => "Friday",
+        6 => "Saturday",
         _ => "Dia"
     };
 }

@@ -21,17 +21,17 @@ public sealed class ReservationService(
         {
             "active" => ReservationStatusIds.Active,
             "history" => ReservationStatusIds.History,
-            _ => throw new BusinessException("La vista debe ser active o history.")
+            _ => throw new BusinessException("View must be active or history.")
         };
 
         if (filter.DateFrom.HasValue && filter.DateTo.HasValue && filter.DateTo < filter.DateFrom)
         {
-            throw new BusinessException("La fecha hasta debe ser mayor o igual a la fecha desde.");
+            throw new BusinessException("End date must be on or after start date.");
         }
 
         if (filter.StatusId.HasValue && !statuses.Contains(filter.StatusId.Value))
         {
-            throw new BusinessException("El estado no corresponde a la vista seleccionada.");
+            throw new BusinessException("The status does not match the selected view.");
         }
 
         var reservations = await repository.GetReservationsAsync(
@@ -53,7 +53,7 @@ public sealed class ReservationService(
         var today = DateOnly.FromDateTime(now);
         if (date < today)
         {
-            throw new BusinessException("No se puede consultar disponibilidad para una fecha pasada.");
+            throw new BusinessException("Availability cannot be checked for a past date.");
         }
 
         var currentTime = TimeOnly.FromDateTime(now);
@@ -71,6 +71,56 @@ public sealed class ReservationService(
             .ToList();
     }
 
+    public async Task<OperationsBoardDto> GetOperationsBoardAsync(int clubId, CancellationToken cancellationToken)
+    {
+        var generatedAt = timeProvider.GetUtcNow();
+        var localNow = TimeZoneInfo.ConvertTime(generatedAt, clubTimeZone).DateTime;
+        var operationalDate = DateOnly.FromDateTime(localNow);
+        var currentTime = TimeOnly.FromDateTime(localNow);
+        var reservations = await repository.GetOperationsBoardReservationsAsync(clubId, operationalDate, cancellationToken);
+        var activeReservations = reservations
+            .Where(x => x.ReservationStatusId is ReservationStatusIds.Pending or ReservationStatusIds.Confirmed)
+            .ToList();
+        var operationItems = reservations.Select(ToOperationsDto).ToList();
+
+        var timeline = operationItems
+            .GroupBy(x => new { x.CourtId, x.CourtName })
+            .OrderBy(x => x.Key.CourtName)
+            .Select(x => new OperationsCourtTimelineDto(
+                x.Key.CourtId,
+                x.Key.CourtName,
+                x.OrderBy(item => item.StartTime).ThenBy(item => item.Id).ToList()))
+            .ToList();
+
+        var upcomingUnpaid = activeReservations
+            .Select(ToOperationsDto)
+            .Where(x => x.PendingBalance > 0)
+            .OrderBy(x => x.StartTime)
+            .ThenBy(x => x.CourtName)
+            .ToList();
+        var startingSoon = activeReservations
+            .Where(x =>
+            {
+                var minutesUntilStart = (x.AvailableTurn.StartTime - currentTime).TotalMinutes;
+                return minutesUntilStart >= 0 && minutesUntilStart <= 60;
+            })
+            .Select(ToOperationsDto)
+            .OrderBy(x => x.StartTime)
+            .ThenBy(x => x.CourtName)
+            .ToList();
+
+        return new OperationsBoardDto(
+            operationalDate,
+            generatedAt,
+            reservations.Count(x => x.ReservationStatusId != ReservationStatusIds.Cancelled),
+            upcomingUnpaid.Count,
+            startingSoon.Count,
+            reservations.Count(x => x.ReservationStatusId == ReservationStatusIds.Completed),
+            timeline,
+            upcomingUnpaid,
+            startingSoon);
+    }
+
     public async Task<ReservationDetailDto> CreateAsync(
         int clubId,
         int employeeId,
@@ -80,57 +130,57 @@ public sealed class ReservationService(
     {
         if (request.ReservationStatusId is not (ReservationStatusIds.Pending or ReservationStatusIds.Confirmed))
         {
-            throw new BusinessException("La reserva debe crearse como Pendiente o Confirmada.");
+            throw new BusinessException("Reservations must be created as Pending or Confirmed.");
         }
 
         ValidateFutureDate(request.ReservationDate);
 
         var client = await repository.GetClientAsync(request.ClientId, cancellationToken)
-            ?? throw new BusinessException("El cliente indicado no existe.");
+            ?? throw new BusinessException("The selected customer does not exist.");
         if (!client.Person.IsActive)
         {
-            throw new BusinessException("No se puede reservar para un cliente inactivo.");
+            throw new BusinessException("Reservations cannot be created for inactive customers.");
         }
 
         var employee = await repository.GetEmployeeAsync(employeeId, cancellationToken)
-            ?? throw new BusinessException("El empleado autenticado no existe.");
+            ?? throw new BusinessException("The authenticated staff member does not exist.");
         if (!employee.Person.IsActive || employee.ClubId != clubId)
         {
-            throw new BusinessException("El empleado autenticado no está activo en este club.");
+            throw new BusinessException("The authenticated staff member is not active for this club.");
         }
 
         var turn = await repository.GetAvailableTurnAsync(request.AvailableTurnId, cancellationToken)
-            ?? throw new BusinessException("El turno indicado no existe.");
+            ?? throw new BusinessException("The selected time slot does not exist.");
         if (!turn.IsActive || !turn.Court.IsActive)
         {
-            throw new BusinessException("La cancha y el turno deben estar activos.");
+            throw new BusinessException("The court and time slot must be active.");
         }
 
         if (turn.Court.ClubId != clubId)
         {
-            throw new BusinessException("El turno no pertenece al club autenticado.");
+            throw new BusinessException("The time slot does not belong to the authenticated club.");
         }
 
         ValidateFutureTime(request.ReservationDate, turn.StartTime);
 
         if (await repository.IsOccupiedAsync(request.ReservationDate, request.AvailableTurnId, cancellationToken))
         {
-            throw new ConflictException("El turno ya está reservado para la fecha seleccionada.");
+            throw new ConflictException("The selected time slot is already reserved for that date.");
         }
 
         Promotion? promotion = null;
         if (request.PromotionId.HasValue)
         {
             promotion = await repository.GetPromotionAsync(request.PromotionId.Value, cancellationToken)
-                ?? throw new BusinessException("La promoción indicada no existe.");
+                ?? throw new BusinessException("The selected promotion does not exist.");
             if (!promotion.IsActive || request.ReservationDate < promotion.DateFrom || request.ReservationDate > promotion.DateTo)
             {
-                throw new BusinessException("La promoción no está activa y vigente para la fecha de reserva.");
+                throw new BusinessException("The promotion is not active for the reservation date.");
             }
         }
 
         var status = await repository.GetStatusAsync(request.ReservationStatusId, cancellationToken)
-            ?? throw new BusinessException("El estado indicado no existe.");
+            ?? throw new BusinessException("The selected status does not exist.");
         var basePrice = CalculateBasePrice(turn);
         var finalPrice = CalculateFinalPrice(basePrice, promotion?.DiscountPercentage);
         var reservation = new Reservation
@@ -153,8 +203,8 @@ public sealed class ReservationService(
         reservation.Audits.Add(new ReservationAudit
         {
             Reservation = reservation,
-            Action = "Creacion",
-            Description = $"Reserva creada en estado {status.Name} para {client.Person.FirstName} {client.Person.LastName}, cancha {turn.Court.Name}, turno {turn.StartTime:HH\\:mm}-{turn.EndTime:HH\\:mm}.",
+            Action = "Created",
+            Description = $"Reservation creada en status {status.Name} para {client.Person.FirstName} {client.Person.LastName}, court {turn.Court.Name}, time slot {turn.StartTime:HH\\:mm}-{turn.EndTime:HH\\:mm}.",
             Username = username,
             CreatedAt = timeProvider.GetUtcNow().UtcDateTime
         });
@@ -174,24 +224,24 @@ public sealed class ReservationService(
         var reservation = await RequireReservationAsync(id, clubId, true, cancellationToken);
         if (!IsValidTransition(reservation.ReservationStatusId, request.ReservationStatusId))
         {
-            throw new BusinessException("El cambio de estado solicitado no está permitido.");
+            throw new BusinessException("The requested status change is not allowed.");
         }
 
         if (request.ReservationStatusId == ReservationStatusIds.Cancelled && await repository.HasPaymentsAsync(id, cancellationToken))
         {
-            throw new BusinessException("No se puede cancelar una reserva que tiene pagos registrados.");
+            throw new BusinessException("Reservations with recorded payments cannot be canceled.");
         }
 
         var newStatus = await repository.GetStatusAsync(request.ReservationStatusId, cancellationToken)
-            ?? throw new BusinessException("El estado indicado no existe.");
+            ?? throw new BusinessException("The selected status does not exist.");
         var previousStatus = reservation.ReservationStatus.Name;
         reservation.ReservationStatusId = newStatus.Id;
         reservation.ReservationStatus = newStatus;
         reservation.Audits.Add(new ReservationAudit
         {
             ReservationId = reservation.Id,
-            Action = "CambioEstado",
-            Description = $"Estado cambiado de {previousStatus} a {newStatus.Name}.",
+            Action = "StatusChanged",
+            Description = $"Status cambiado de {previousStatus} a {newStatus.Name}.",
             Username = username,
             CreatedAt = timeProvider.GetUtcNow().UtcDateTime
         });
@@ -203,7 +253,7 @@ public sealed class ReservationService(
     private async Task<Reservation> RequireReservationAsync(int id, int clubId, bool trackChanges, CancellationToken cancellationToken)
     {
         return await repository.GetReservationAsync(id, clubId, trackChanges, cancellationToken)
-            ?? throw new BusinessException("La reserva no existe.");
+            ?? throw new BusinessException("The reservation does not exist.");
     }
 
     private DateTime GetLocalNow()
@@ -215,12 +265,12 @@ public sealed class ReservationService(
     {
         if (date == default)
         {
-            throw new BusinessException("La fecha de reserva es obligatoria.");
+            throw new BusinessException("Reservation date is required.");
         }
 
         if (date < DateOnly.FromDateTime(GetLocalNow()))
         {
-            throw new BusinessException("No se puede crear una reserva para una fecha pasada.");
+            throw new BusinessException("Reservations cannot be created for a past date.");
         }
     }
 
@@ -229,7 +279,7 @@ public sealed class ReservationService(
         var now = GetLocalNow();
         if (date == DateOnly.FromDateTime(now) && startTime <= TimeOnly.FromDateTime(now))
         {
-            throw new BusinessException("No se puede reservar un turno cuyo horario ya comenzó.");
+            throw new BusinessException("Reservations cannot be created for a time slot that has already started.");
         }
     }
 
@@ -276,9 +326,7 @@ public sealed class ReservationService(
 
     private static ReservationDetailDto ToDetailDto(Reservation reservation)
     {
-        var totalPaid = reservation.Payments.Sum(x => x.Amount);
-        var pendingBalance = Math.Max(0, reservation.FinalPrice - totalPaid);
-        var paymentStatus = totalPaid <= 0 ? "Sin pagos" : pendingBalance > 0 ? "Pago parcial" : "Pagada";
+        var (totalPaid, pendingBalance, paymentStatus) = PaymentSummary(reservation);
         return new ReservationDetailDto(
             reservation.Id,
             reservation.ReservationDate,
@@ -303,6 +351,35 @@ public sealed class ReservationService(
             pendingBalance,
             paymentStatus,
             reservation.CreatedAt);
+    }
+
+    private static OperationsReservationDto ToOperationsDto(Reservation reservation)
+    {
+        var (totalPaid, pendingBalance, paymentStatus) = PaymentSummary(reservation);
+        return new OperationsReservationDto(
+            reservation.Id,
+            reservation.ReservationDate,
+            reservation.ClientId,
+            FullName(reservation.Client.Person),
+            reservation.AvailableTurnId,
+            reservation.AvailableTurn.CourtId,
+            reservation.AvailableTurn.Court.Name,
+            reservation.AvailableTurn.StartTime,
+            reservation.AvailableTurn.EndTime,
+            reservation.ReservationStatusId,
+            reservation.ReservationStatus.Name,
+            reservation.FinalPrice,
+            totalPaid,
+            pendingBalance,
+            paymentStatus);
+    }
+
+    private static (decimal TotalPaid, decimal PendingBalance, string PaymentStatus) PaymentSummary(Reservation reservation)
+    {
+        var totalPaid = reservation.Payments.Sum(x => x.Amount);
+        var pendingBalance = Math.Max(0, reservation.FinalPrice - totalPaid);
+        var paymentStatus = totalPaid <= 0 ? "Unpaid" : pendingBalance > 0 ? "Partially paid" : "Paid";
+        return (totalPaid, pendingBalance, paymentStatus);
     }
 
     private static string FullName(Person person) => $"{person.FirstName} {person.LastName}";
