@@ -14,7 +14,21 @@ public sealed class AddUsPortfolioDemoSeed : Migration
     {
         migrationBuilder.Sql(
             """
+            DECLARE @adminRoleId int = (SELECT TOP (1) [Id] FROM [Roles] WHERE [Name] = N'Admin' ORDER BY [Id]);
+
+            IF @adminRoleId IS NULL
+                THROW 51010, 'Create the Admin role before applying the portfolio demo seed.', 1;
+
             DECLARE @clubId int = (SELECT TOP (1) [Id] FROM [Clubs] WHERE [IsActive] = 1 ORDER BY [Id]);
+
+            IF @clubId IS NULL
+            BEGIN
+                INSERT INTO [Clubs] ([Name], [Address], [Phone], [Email], [IsActive], [CreatedAt])
+                VALUES (N'Padelito NYC', N'New York, NY', N'(212) 555-0199', N'admin@padelito.com', 1, '2026-07-24T12:00:00Z');
+
+                SET @clubId = CONVERT(int, SCOPE_IDENTITY());
+            END;
+
             DECLARE @employeeId int =
             (
                 SELECT TOP (1) [EmployeeId]
@@ -23,8 +37,21 @@ public sealed class AddUsPortfolioDemoSeed : Migration
                 ORDER BY CASE WHEN [Username] = N'admin' THEN 0 ELSE 1 END, [Id]
             );
 
-            IF @clubId IS NULL OR @employeeId IS NULL
-                THROW 51010, 'Create an active club and administrator before applying the portfolio demo seed.', 1;
+            IF @employeeId IS NULL
+            BEGIN
+                INSERT INTO [People] ([FirstName], [LastName], [Dni], [Phone], [Email], [IsActive], [CreatedAt])
+                VALUES (N'Alex', N'Morgan', N'555019999', N'(212) 555-0199', N'admin@padelito.com', 1, '2026-07-24T12:00:00Z');
+
+                DECLARE @personId int = CONVERT(int, SCOPE_IDENTITY());
+
+                INSERT INTO [Employees] ([PersonId], [ClubId])
+                VALUES (@personId, @clubId);
+
+                SET @employeeId = CONVERT(int, SCOPE_IDENTITY());
+
+                INSERT INTO [Users] ([Username], [PasswordHash], [EmployeeId], [RoleId], [IsActive], [CreatedAt])
+                VALUES (N'admin', N'AQAAAAIAAYagAAAAED2SFjyZfFosfjAmmH1n5FHdE59w+9e6K96p468HR/FvY6jo4v94M+pMCLf/9mpNhA==', @employeeId, @adminRoleId, 1, '2026-07-24T12:00:00Z');
+            END;
 
             SET IDENTITY_INSERT [Courts] ON;
             INSERT INTO [Courts] ([Id], [ClubId], [CourtTypeId], [Name], [HourPrice], [IsActive])
