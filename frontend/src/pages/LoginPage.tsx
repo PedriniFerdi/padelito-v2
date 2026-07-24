@@ -8,8 +8,8 @@ import padelBallHero from '@/assets/padel-ball-hero.png'
 import { useAuth } from '@/features/auth/AuthProvider'
 
 const loginSchema = z.object({
-  username: z.string().trim().min(1, 'Ingresá tu usuario.'),
-  password: z.string().min(1, 'Ingresá tu contraseña.'),
+  username: z.string().trim().min(1, 'Enter your username.'),
+  password: z.string().min(1, 'Enter your password.'),
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
@@ -56,11 +56,11 @@ export function LoginPage() {
       navigate(state?.from?.pathname ?? '/dashboard', { replace: true })
     } catch (error) {
       if (error instanceof ApiRequestError && error.statusCode === 401) {
-        setFormError('Usuario o contraseña incorrectos.')
+        setFormError('Incorrect username or password.')
         return
       }
 
-      setFormError('No se pudo iniciar sesión. Revisá que la API esté corriendo.')
+      setFormError('Sign-in failed. Check that the API is running.')
     }
   })
 
@@ -72,10 +72,10 @@ export function LoginPage() {
       />
 
       <div className="relative mx-auto grid min-h-[calc(100dvh-5rem)] w-full max-w-[1500px] origin-center scale-90 items-center lg:grid-cols-[minmax(0,1fr)_minmax(480px,600px)] lg:gap-10 xl:gap-20">
-        <section className="hidden min-w-0 items-center justify-center lg:flex" aria-label="Identidad visual de Padelito">
+        <section className="hidden min-w-0 items-center justify-center lg:flex" aria-label="Padelito visual identity">
           <div className="login-ball-float w-full max-w-[820px]">
             <img
-              alt="Pelota de pádel premium verde suspendida entre fragmentos de vidrio"
+              alt="Premium green padel ball suspended between glass fragments"
               className="aspect-square w-full object-cover [mask-image:radial-gradient(circle,black_42%,transparent_78%)] transition-transform duration-700 ease-out hover:scale-[1.015]"
               src={padelBallHero}
             />
@@ -89,92 +89,42 @@ export function LoginPage() {
           >
             <header className="mb-10 xl:mb-[62px]">
               <h1 className="font-display text-[42px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#50dfa8] sm:text-5xl">
-                Padelito v2
+                Padelito
               </h1>
               <p className="mt-3 text-base font-medium text-[#c0c4c2] sm:text-lg">
-                Sistema exclusivo para personal autorizado
+                Staff-only club management system
               </p>
             </header>
 
             <div className="space-y-7">
               <label className="block" htmlFor="username">
-                <span className="text-xs font-bold uppercase tracking-[0.055em] text-[#c5cac7]">Usuario</span>
+                <span className="text-xs font-bold uppercase tracking-[0.055em] text-[#c5cac7]">Username</span>
                 <span className="relative mt-3 block">
-                  <UserRound
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#6f7580]"
-                    strokeWidth={2}
-                  />
-                  <input
-                    autoComplete="username"
-                    className="h-16 w-full rounded-xl border border-[#69707a] bg-[#090b0d] pl-[50px] pr-4 text-base font-medium text-[#dce3ed] caret-[#50dfa8] outline-none transition-[border-color,box-shadow] placeholder:text-[#9298a4] hover:border-[#858d98] focus:border-[#50dfa8] focus:ring-2 focus:ring-[#50dfa8]/20"
-                    id="username"
-                    placeholder="admin@club.com"
-                    {...register('username')}
-                  />
+                  <UserRound aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#6f7580]" strokeWidth={2} />
+                  <input autoComplete="username" className="h-16 w-full rounded-xl border border-[#69707a] bg-[#090b0d] pl-[50px] pr-4 text-base font-medium text-[#dce3ed] caret-[#50dfa8] outline-none transition-[border-color,box-shadow] placeholder:text-[#9298a4] hover:border-[#858d98] focus:border-[#50dfa8] focus:ring-2 focus:ring-[#50dfa8]/20" id="username" placeholder="admin@club.com" {...register('username')} />
                 </span>
-                {errors.username?.message ? (
-                  <span className="mt-2 block text-sm font-medium text-[#ffb4ab]">{errors.username.message}</span>
-                ) : null}
+                {errors.username?.message ? <span className="mt-2 block text-sm font-medium text-[#ffb4ab]">{errors.username.message}</span> : null}
               </label>
 
               <label className="block" htmlFor="password">
-                <span className="text-xs font-bold uppercase tracking-[0.055em] text-[#c5cac7]">Contraseña</span>
+                <span className="text-xs font-bold uppercase tracking-[0.055em] text-[#c5cac7]">Password</span>
                 <span className="relative mt-3 block">
-                  <LockKeyhole
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#6f7580]"
-                    strokeWidth={2}
-                  />
-                  <input
-                    autoComplete="current-password"
-                    className="h-16 w-full rounded-xl border border-[#69707a] bg-[#090b0d] pl-[50px] pr-4 text-base font-semibold tracking-[0.13em] text-[#dce3ed] caret-[#50dfa8] outline-none transition-[border-color,box-shadow] placeholder:text-[#dce3ed] hover:border-[#858d98] focus:border-[#50dfa8] focus:ring-2 focus:ring-[#50dfa8]/20"
-                    id="password"
-                    type="password"
-                    {...register('password')}
-                  />
+                  <LockKeyhole aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#6f7580]" strokeWidth={2} />
+                  <input autoComplete="current-password" className="h-16 w-full rounded-xl border border-[#69707a] bg-[#090b0d] pl-[50px] pr-4 text-base font-semibold tracking-[0.13em] text-[#dce3ed] caret-[#50dfa8] outline-none transition-[border-color,box-shadow] placeholder:text-[#dce3ed] hover:border-[#858d98] focus:border-[#50dfa8] focus:ring-2 focus:ring-[#50dfa8]/20" id="password" type="password" {...register('password')} />
                 </span>
-                {errors.password?.message ? (
-                  <span className="mt-2 block text-sm font-medium text-[#ffb4ab]">{errors.password.message}</span>
-                ) : null}
+                {errors.password?.message ? <span className="mt-2 block text-sm font-medium text-[#ffb4ab]">{errors.password.message}</span> : null}
               </label>
             </div>
 
-            {formError ? (
-              <div
-                aria-live="polite"
-                className="mt-6 rounded-xl border border-[#ffb4ab]/25 bg-[#93000a]/20 px-4 py-3 text-sm font-medium text-[#ffdad6]"
-                role="alert"
-              >
-                {formError}
-              </div>
-            ) : null}
+            {formError ? <div aria-live="polite" className="mt-6 rounded-xl border border-[#ffb4ab]/25 bg-[#93000a]/20 px-4 py-3 text-sm font-medium text-[#ffdad6]" role="alert">{formError}</div> : null}
 
-            <button
-              className="group mt-11 flex h-[66px] w-full items-center justify-center gap-3 whitespace-nowrap rounded-xl bg-[linear-gradient(105deg,#078b65,#08a475)] px-5 text-xl font-bold text-[#f4fff9] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_16px_34px_rgba(5,146,105,0.16)] transition-[filter,transform,box-shadow] hover:brightness-110 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_18px_40px_rgba(5,146,105,0.23)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSubmitting}
-              type="submit"
-            >
-              {isSubmitting ? (
-                <>
-                  <LoaderCircle aria-hidden="true" className="size-5 animate-spin" strokeWidth={2} />
-                  Ingresando...
-                </>
-              ) : (
-                <>
-                  Ingresar
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="size-6 transition-transform duration-200 group-hover:translate-x-1"
-                    strokeWidth={2}
-                  />
-                </>
-              )}
+            <button className="group mt-11 flex h-[66px] w-full items-center justify-center gap-3 whitespace-nowrap rounded-xl bg-[linear-gradient(105deg,#078b65,#08a475)] px-5 text-xl font-bold text-[#f4fff9] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_16px_34px_rgba(5,146,105,0.16)] transition-[filter,transform,box-shadow] hover:brightness-110 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_18px_40px_rgba(5,146,105,0.23)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60" disabled={isSubmitting} type="submit">
+              {isSubmitting ? <><LoaderCircle aria-hidden="true" className="size-5 animate-spin" strokeWidth={2} />Signing in...</> : <>Sign in<ArrowRight aria-hidden="true" className="size-6 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={2} /></>}
             </button>
           </form>
 
           <footer className="mt-10 px-1 text-center text-xs font-semibold leading-6 text-[#8a909b] sm:text-sm lg:mt-14 lg:text-left">
-            <p>© 2026 Padelito v2. Premium Club Management.</p>
+            <p>© 2026 Padelito. Premium Club Management.</p>
           </footer>
         </section>
       </div>

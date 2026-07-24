@@ -5,6 +5,7 @@ import { PublicOnlyRoute } from '@/features/auth/PublicOnlyRoute'
 import { ClientsPage, CourtsPage, EmployeesPage, PromotionsPage, TurnsPage, UsersPage } from '@/pages/CatalogPages'
 import { LoginPage } from '@/pages/LoginPage'
 import { ReservationsPage } from '@/pages/ReservationsPage'
+import { OperationsBoardPage } from '@/pages/OperationsBoardPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { PaymentsPage } from '@/pages/PaymentsPage'
 import { ReportsPage } from '@/pages/ReportsPage'
@@ -20,13 +21,14 @@ export function AppRouter() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route element={<Navigate replace to="/dashboard" />} index />
+          <Route element={<Navigate replace to="/operations" />} index />
           <Route element={<ClientsPage />} path="clients" />
           <Route element={<EmployeesPage />} path="employees" />
           <Route element={<UsersPage />} path="users" />
           <Route element={<CourtsPage />} path="courts" />
           <Route element={<TurnsPage />} path="turns" />
           <Route element={<PromotionsPage />} path="promotions" />
+          <Route element={<OperationsBoardPage />} path="operations" />
           <Route element={<ReservationsPage />} path="reservations" />
           <Route element={<DashboardPage />} path="dashboard" />
           <Route element={<PaymentsPage />} path="payments" />
@@ -37,7 +39,7 @@ export function AppRouter() {
         </Route>
       </Route>
 
-      <Route element={<Navigate replace to="/dashboard" />} path="*" />
+      <Route element={<Navigate replace to="/operations" />} path="*" />
     </Routes>
   )
 }

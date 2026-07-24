@@ -2,6 +2,7 @@ import { apiFetch } from './http'
 import type {
   AvailableTurn,
   Client,
+  ClientProfile,
   Court,
   CourtType,
   Employee,
@@ -59,6 +60,7 @@ function send<TResponse>(path: string, method: string, body?: unknown) {
 
 export const clientsApi = {
   list: () => apiFetch<Client[]>('/api/clients'),
+  profile: (id: number) => apiFetch<ClientProfile>(`/api/clients/${id}/profile`),
   create: (payload: PersonPayload) => send<Client>('/api/clients', 'POST', payload),
   update: (id: number, payload: PersonPayload) => send<Client>(`/api/clients/${id}`, 'PUT', payload),
   activate: (id: number) => send<void>(`/api/clients/${id}/activate`, 'PATCH'),

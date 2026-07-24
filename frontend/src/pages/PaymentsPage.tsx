@@ -1,16 +1,15 @@
 import { useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CreditCard, Plus, X } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { CreditCard, Plus } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { paymentsApi, type PaymentFilters } from '@/api/payments.api'
 import { reservationsApi } from '@/api/reservations.api'
-import type { Reservation } from '@/types/api'
-import { paymentSchema, toFieldErrors, type FieldErrors } from '@/lib/validation'
+import { PaymentDialog } from '@/components/payments/PaymentDialog'
 import { todayInClub } from '@/lib/dates'
 
-const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })
-const input = 'w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0F766E] focus:ring-2 focus:ring-[#99F6E4]'
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const input =
+  'w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0F766E] focus:ring-2 focus:ring-[#99F6E4]'
 
 export function PaymentsPage() {
   const client = useQueryClient()
@@ -24,21 +23,116 @@ export function PaymentsPage() {
   const methods = useQuery({ queryKey: ['payment-methods'], queryFn: paymentsApi.methods })
   const active = useQuery({ queryKey: ['reservations', 'active', 'payments'], queryFn: () => reservationsApi.list({ view: 'active' }) })
   const history = useQuery({ queryKey: ['reservations', 'history', 'payments'], queryFn: () => reservationsApi.list({ view: 'history' }) })
-  const reservations = useMemo(() => [...(active.data ?? []), ...(history.data ?? [])].filter(r => r.status !== 'Cancelada'), [active.data, history.data])
-  const total = payments.data?.reduce((sum, p) => sum + p.amount, 0) ?? 0
-  return <div className="space-y-6"><header className="flex flex-wrap items-end justify-between gap-4"><div><div className="flex items-center gap-2 text-sm font-bold text-[#0F766E]"><CreditCard className="size-4" /> Caja</div><h2 className="mt-2 text-3xl font-black">Pagos</h2><p className="mt-1 text-sm text-[#64748B]">Cobros parciales y saldos de reservas.</p></div><button className="inline-flex items-center gap-2 rounded-xl bg-[#0F766E] px-4 py-2.5 text-sm font-bold text-white" onClick={() => setOpen(true)}><Plus className="size-4" /> Registrar pago</button></header>
-    <section className="grid gap-4 sm:grid-cols-2"><article className="rounded-2xl border border-[#E2E8F0] bg-white p-5"><p className="text-sm font-semibold text-[#64748B]">Total del resultado</p><p className="mt-1 text-2xl font-black">{money.format(total)}</p></article><article className="rounded-2xl border border-[#E2E8F0] bg-white p-5"><p className="text-sm font-semibold text-[#64748B]">Pagos encontrados</p><p className="mt-1 text-2xl font-black">{payments.data?.length ?? 0}</p></article></section>
-    <form className="grid gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-4" onSubmit={e => { e.preventDefault(); setFilters(draft) }}><label className="text-sm font-bold">Pago desde<input className={`${input} mt-1`} onChange={e => setDraft({...draft,dateFrom:e.target.value||undefined})} type="date" value={draft.dateFrom ?? ''}/></label><label className="text-sm font-bold">Pago hasta<input className={`${input} mt-1`} onChange={e => setDraft({...draft,dateTo:e.target.value||undefined})} type="date" value={draft.dateTo ?? ''}/></label><label className="text-sm font-bold">Método<select className={`${input} mt-1`} onChange={e => setDraft({...draft,methodId:Number(e.target.value)||undefined})} value={draft.methodId ?? ''}><option value="">Todos los métodos</option>{methods.data?.map(m => <option key={m.id} value={m.id}>{m.description}</option>)}</select></label><button className="self-end rounded-xl border border-[#99F6E4] px-4 py-2.5 font-bold text-[#0F766E]">Aplicar filtros</button></form>
-    <section className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">{payments.isLoading ? <p className="p-8 text-center text-sm text-[#64748B]">Cargando pagos...</p> : payments.isError ? <p className="p-5 text-sm font-semibold text-red-700">{payments.error.message}</p> : !payments.data?.length ? <p className="p-10 text-center text-sm text-[#64748B]">No hay pagos para los filtros seleccionados.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-[#F8FAFC] text-xs uppercase text-[#64748B]"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Reserva</th><th className="px-4 py-3">Método</th><th className="px-4 py-3 text-right">Importe</th><th className="px-4 py-3 text-right">Saldo</th></tr></thead><tbody>{payments.data.map(p => <tr className="border-t border-[#F1F5F9]" key={p.id}><td className="px-4 py-3">{new Date(p.paymentDate).toLocaleString('es-AR')}</td><td className="px-4 py-3"><b>#{p.reservationId} · {p.clientName}</b><div className="text-xs text-[#64748B]">{p.courtName}</div></td><td className="px-4 py-3">{p.paymentMethod}</td><td className="px-4 py-3 text-right font-bold">{money.format(p.amount)}</td><td className="px-4 py-3 text-right">{money.format(p.pendingBalance)}</td></tr>)}</tbody></table></div>}</section>
-    {open && <PaymentDialog initialReservationId={initialReservation} methods={methods.data ?? []} reservations={reservations} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); client.invalidateQueries({queryKey:['payments']}); client.invalidateQueries({queryKey:['reservations']}); client.invalidateQueries({queryKey:['dashboard']}) }} />}
-  </div>
-}
+  const reservations = useMemo(
+    () => [...(active.data ?? []), ...(history.data ?? [])].filter((reservation) => reservation.status !== 'Canceled'),
+    [active.data, history.data],
+  )
+  const total = payments.data?.reduce((sum, payment) => sum + payment.amount, 0) ?? 0
 
-function PaymentDialog({reservations,methods,initialReservationId,onClose,onSaved}:{reservations:Reservation[];methods:{id:number;description:string}[];initialReservationId?:number;onClose:()=>void;onSaved:()=>void}) {
-  const [reservationId,setReservationId]=useState(initialReservationId ?? 0); const [methodId,setMethodId]=useState(0); const [amount,setAmount]=useState(''); const [note,setNote]=useState('')
-  const [fieldErrors,setFieldErrors]=useState<FieldErrors>({})
-  const detail=useQuery({queryKey:['reservation-detail',reservationId],queryFn:()=>reservationsApi.detail(reservationId),enabled:reservationId>0})
-  const mutation=useMutation({mutationFn:paymentsApi.create,onSuccess:onSaved})
-  function submit(e:FormEvent){e.preventDefault();const parsed=paymentSchema.safeParse({reservationId,paymentMethodId:methodId,amount:amount===''?Number.NaN:Number(amount),pendingBalance:detail.data?.pendingBalance??0,note});if(!parsed.success){setFieldErrors(toFieldErrors(parsed.error));return}setFieldErrors({});mutation.mutate({reservationId:parsed.data.reservationId,paymentMethodId:parsed.data.paymentMethodId,amount:parsed.data.amount,paymentDate:new Date().toISOString(),note:parsed.data.note||null})}
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4"><form className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl" onSubmit={submit}><div className="flex items-center justify-between"><h3 className="text-xl font-black">Registrar pago</h3><button onClick={onClose} type="button"><X className="size-5"/></button></div><div className="mt-5 space-y-4"><label className="block text-sm font-bold">Reserva<select className={`${input} mt-1`} value={reservationId||''} onChange={e=>setReservationId(Number(e.target.value))} required><option value="">Seleccionar</option>{reservations.map(r=><option key={r.id} value={r.id}>#{r.id} · {r.clientName} · {r.courtName} · {money.format(r.finalPrice)}</option>)}</select>{fieldErrors.reservationId&&<span className="mt-1 block text-xs text-red-600">{fieldErrors.reservationId}</span>}</label>{detail.data&&<div className="grid grid-cols-3 gap-2 rounded-xl bg-[#F8FAFC] p-3 text-center text-xs"><div>Precio<b className="block text-sm">{money.format(detail.data.finalPrice)}</b></div><div>Pagado<b className="block text-sm">{money.format(detail.data.totalPaid)}</b></div><div>Saldo<b className="block text-sm text-[#0F766E]">{money.format(detail.data.pendingBalance)}</b></div></div>}<label className="block text-sm font-bold">Método<select className={`${input} mt-1`} value={methodId||''} onChange={e=>setMethodId(Number(e.target.value))} required><option value="">Seleccionar</option>{methods.map(m=><option key={m.id} value={m.id}>{m.description}</option>)}</select>{fieldErrors.paymentMethodId&&<span className="mt-1 block text-xs text-red-600">{fieldErrors.paymentMethodId}</span>}</label><label className="block text-sm font-bold">Monto<input className={`${input} mt-1`} max={detail.data?.pendingBalance} min="0.01" onChange={e=>setAmount(e.target.value)} step="0.01" type="number" required value={amount}/>{fieldErrors.amount&&<span className="mt-1 block text-xs text-red-600">{fieldErrors.amount}</span>}</label><label className="block text-sm font-bold">Nota<textarea className={`${input} mt-1`} maxLength={255} onChange={e=>setNote(e.target.value)} rows={2} value={note}/>{fieldErrors.note&&<span className="mt-1 block text-xs text-red-600">{fieldErrors.note}</span>}</label>{mutation.isError&&<p className="rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{mutation.error.message}</p>}</div><div className="mt-5 flex justify-end gap-3"><button className="rounded-xl border px-4 py-2 text-sm font-bold" onClick={onClose} type="button">Cancelar</button><button className="rounded-xl bg-[#0F766E] px-4 py-2 text-sm font-bold text-white disabled:opacity-50" disabled={mutation.isPending||!reservationId||!methodId||!amount||!detail.data}>Guardar pago</button></div></form></div>
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-bold text-[#0F766E]">
+            <CreditCard className="size-4" /> Checkout
+          </div>
+          <h2 className="mt-2 text-3xl font-black">Payments</h2>
+          <p className="mt-1 text-sm text-[#64748B]">Partial collections and open reservation balances.</p>
+        </div>
+        <button className="inline-flex items-center gap-2 rounded-xl bg-[#0F766E] px-4 py-2.5 text-sm font-bold text-white" onClick={() => setOpen(true)}>
+          <Plus className="size-4" /> Record payment
+        </button>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2">
+        <article className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+          <p className="text-sm font-semibold text-[#64748B]">Filtered total</p>
+          <p className="mt-1 text-2xl font-black">{money.format(total)}</p>
+        </article>
+        <article className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+          <p className="text-sm font-semibold text-[#64748B]">Payments found</p>
+          <p className="mt-1 text-2xl font-black">{payments.data?.length ?? 0}</p>
+        </article>
+      </section>
+
+      <form
+        className="grid gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          setFilters(draft)
+        }}
+      >
+        <label className="text-sm font-bold">
+          Payment from
+          <input className={`${input} mt-1`} onChange={(event) => setDraft({ ...draft, dateFrom: event.target.value || undefined })} type="date" value={draft.dateFrom ?? ''} />
+        </label>
+        <label className="text-sm font-bold">
+          Payment to
+          <input className={`${input} mt-1`} onChange={(event) => setDraft({ ...draft, dateTo: event.target.value || undefined })} type="date" value={draft.dateTo ?? ''} />
+        </label>
+        <label className="text-sm font-bold">
+          Method
+          <select className={`${input} mt-1`} onChange={(event) => setDraft({ ...draft, methodId: Number(event.target.value) || undefined })} value={draft.methodId ?? ''}>
+            <option value="">All methods</option>
+            {methods.data?.map((method) => (
+              <option key={method.id} value={method.id}>
+                {method.description}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="self-end rounded-xl border border-[#99F6E4] px-4 py-2.5 font-bold text-[#0F766E]">Apply filters</button>
+      </form>
+
+      <section className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
+        {payments.isLoading ? <p className="p-8 text-center text-sm text-[#64748B]">Loading payments...</p> : null}
+        {payments.isError ? <p className="p-5 text-sm font-semibold text-red-700">{payments.error.message}</p> : null}
+        {payments.isSuccess && payments.data.length === 0 ? <p className="p-10 text-center text-sm text-[#64748B]">No payments match the selected filters.</p> : null}
+        {payments.isSuccess && payments.data.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-[#F8FAFC] text-xs uppercase text-[#64748B]">
+                <tr>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Reservation</th>
+                  <th className="px-4 py-3">Method</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3 text-right">Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.data.map((payment) => (
+                  <tr className="border-t border-[#F1F5F9]" key={payment.id}>
+                    <td className="px-4 py-3">{new Date(payment.paymentDate).toLocaleString('en-US')}</td>
+                    <td className="px-4 py-3">
+                      <b>#{payment.reservationId} - {payment.clientName}</b>
+                      <div className="text-xs text-[#64748B]">{payment.courtName}</div>
+                    </td>
+                    <td className="px-4 py-3">{payment.paymentMethod}</td>
+                    <td className="px-4 py-3 text-right font-bold">{money.format(payment.amount)}</td>
+                    <td className="px-4 py-3 text-right">{money.format(payment.pendingBalance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
+
+      {open ? (
+        <PaymentDialog
+          initialReservationId={initialReservation}
+          methods={methods.data ?? []}
+          onClose={() => setOpen(false)}
+          onSaved={() => {
+            setOpen(false)
+            client.invalidateQueries({ queryKey: ['payments'] })
+            client.invalidateQueries({ queryKey: ['reservations'] })
+            client.invalidateQueries({ queryKey: ['dashboard'] })
+          }}
+          reservations={reservations}
+        />
+      ) : null}
+    </div>
+  )
 }
