@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, KeyRound, Pencil, Plus, Search, X } from 'lucide-react'
+import { Check, Eye, KeyRound, Pencil, Plus, Search, X } from 'lucide-react'
 import {
   clientsApi,
   courtTypesApi,
@@ -30,21 +30,22 @@ import {
   userUpdateSchema,
   type FieldErrors,
 } from '@/lib/validation'
-import type { AvailableTurn, Client, Court, CourtType, Employee, Promotion, RoleCatalog, UserCatalog } from '@/types/api'
+import type { AvailableTurn, Client, ClientProfile, Court, CourtType, Employee, Promotion, RoleCatalog, UserCatalog } from '@/types/api'
 
 type StatusItem = { id: number; isActive: boolean }
 type FormMode<T> = { item: T | null } | null
 
 const emptyPerson: PersonPayload = { firstName: '', lastName: '', dni: '', phone: '', email: '' }
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
 function getErrorMessage(error: unknown) {
-  return error instanceof ApiRequestError ? error.message : 'No se pudo completar la operacion.'
+  return error instanceof ApiRequestError ? error.message : 'The operation could not be completed.'
 }
 
 function activeBadge(isActive: boolean) {
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-500'}`}>
-      {isActive ? 'Activo' : 'Inactivo'}
+      {isActive ? 'Active' : 'Inactive'}
     </span>
   )
 }
@@ -83,7 +84,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (value: strin
   return (
     <label className="flex w-full max-w-sm items-center gap-2 rounded-xl border border-[#3e4943] bg-[#131b2e] px-3 py-2.5 text-sm text-[#bdc9c1] shadow-[0_8px_20px_rgba(6,14,32,0.16)] transition focus-within:border-[#7ad9ad] focus-within:ring-4 focus-within:ring-[#7ad9ad]/10">
       <Search aria-hidden="true" className="size-4 shrink-0 text-[#88948b]" strokeWidth={1.9} />
-      <input className="w-full bg-transparent text-sm text-[#dae2fd] outline-none placeholder:text-[#88948b]" onChange={(event) => onChange(event.target.value)} placeholder="Buscar" value={value} />
+      <input className="w-full bg-transparent text-sm text-[#dae2fd] outline-none placeholder:text-[#88948b]" onChange={(event) => onChange(event.target.value)} placeholder="Search" value={value} />
     </label>
   )
 }
@@ -115,10 +116,10 @@ function StatusActions<TItem extends StatusItem>({
 }) {
   return (
     <div className="flex justify-end gap-2">
-      <ActionButton onClick={() => onEdit(item)} title="Editar">
+      <ActionButton onClick={() => onEdit(item)} title="Edit">
         <Pencil aria-hidden="true" className="size-4" />
       </ActionButton>
-      <ActionButton onClick={() => onToggle(item)} title={item.isActive ? 'Desactivar' : 'Activar'}>
+      <ActionButton onClick={() => onToggle(item)} title={item.isActive ? 'Deactivate' : 'Activate'}>
         {item.isActive ? <X aria-hidden="true" className="size-4" /> : <Check aria-hidden="true" className="size-4" />}
       </ActionButton>
     </div>
@@ -159,15 +160,15 @@ function PersonForm({
       }}
     >
       <h4 className="md:col-span-2 text-sm font-semibold text-slate-900">{title}</h4>
-      <FormControl error={fieldErrors.firstName} label="Nombre"><input aria-invalid={Boolean(fieldErrors.firstName)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={60} onChange={(event) => update('firstName', event.target.value)} value={form.firstName} /></FormControl>
-      <FormControl error={fieldErrors.lastName} label="Apellido"><input aria-invalid={Boolean(fieldErrors.lastName)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={60} onChange={(event) => update('lastName', event.target.value)} value={form.lastName} /></FormControl>
-      <FormControl error={fieldErrors.dni} label="DNI"><input aria-invalid={Boolean(fieldErrors.dni)} inputMode="numeric" required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={10} onChange={(event) => update('dni', event.target.value)} value={form.dni} /></FormControl>
-      <FormControl error={fieldErrors.phone} label="Teléfono"><input aria-invalid={Boolean(fieldErrors.phone)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={40} onChange={(event) => update('phone', event.target.value)} type="tel" value={form.phone} /></FormControl>
+      <FormControl error={fieldErrors.firstName} label="First name"><input aria-invalid={Boolean(fieldErrors.firstName)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={60} onChange={(event) => update('firstName', event.target.value)} value={form.firstName} /></FormControl>
+      <FormControl error={fieldErrors.lastName} label="Last name"><input aria-invalid={Boolean(fieldErrors.lastName)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={60} onChange={(event) => update('lastName', event.target.value)} value={form.lastName} /></FormControl>
+      <FormControl error={fieldErrors.dni} label="Customer ID"><input aria-invalid={Boolean(fieldErrors.dni)} inputMode="numeric" required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={10} onChange={(event) => update('dni', event.target.value)} value={form.dni} /></FormControl>
+      <FormControl error={fieldErrors.phone} label="Phone"><input aria-invalid={Boolean(fieldErrors.phone)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={40} onChange={(event) => update('phone', event.target.value)} type="tel" value={form.phone} /></FormControl>
       <FormControl className="md:col-span-2" error={fieldErrors.email} label="Email"><input aria-invalid={Boolean(fieldErrors.email)} required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={120} onChange={(event) => update('email', event.target.value)} type="email" value={form.email} /></FormControl>
       {error ? <p className="text-sm text-red-600 md:col-span-2" role="alert">{error}</p> : null}
       <div className="flex justify-end gap-2 md:col-span-2">
-        <button className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium" onClick={onCancel} type="button">Cancelar</button>
-        <button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={isSaving} type="submit">{isSaving ? 'Guardando...' : 'Guardar'}</button>
+        <button className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium" onClick={onCancel} type="button">Cancel</button>
+        <button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={isSaving} type="submit">{isSaving ? 'Saving...' : 'Save'}</button>
       </div>
     </form>
   )
@@ -183,11 +184,13 @@ function PeopleTable<TItem extends Client | Employee>({
   items,
   kind,
   onEdit,
+  onProfile,
   onToggle,
 }: {
   items: TItem[]
   kind: 'clients' | 'employees'
   onEdit: (item: TItem) => void
+  onProfile?: (item: TItem) => void
   onToggle: (item: TItem) => void
 }) {
   return (
@@ -195,12 +198,12 @@ function PeopleTable<TItem extends Client | Employee>({
       <table className="w-full text-left text-sm">
         <thead className="bg-[#F8FAFC] text-xs uppercase text-[#334155]">
           <tr>
-            <th className="px-4 py-3 font-bold">Persona</th>
-            <th className="px-4 py-3 font-bold">DNI</th>
-            <th className="px-4 py-3 font-bold">Contacto</th>
-            {kind === 'employees' ? <th className="px-4 py-3 font-bold">Usuario</th> : null}
-            <th className="px-4 py-3 font-bold">Estado</th>
-            <th className="px-4 py-3 text-right font-bold">Acciones</th>
+            <th className="px-4 py-3 font-bold">Person</th>
+            <th className="px-4 py-3 font-bold">Customer ID</th>
+            <th className="px-4 py-3 font-bold">Contact</th>
+            {kind === 'employees' ? <th className="px-4 py-3 font-bold">User</th> : null}
+            <th className="px-4 py-3 font-bold">Status</th>
+            <th className="px-4 py-3 text-right font-bold">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#E2E8F0]">
@@ -209,13 +212,97 @@ function PeopleTable<TItem extends Client | Employee>({
               <td className="px-4 py-3 font-medium text-[#0F172A]">{item.firstName} {item.lastName}</td>
               <td className="px-4 py-3 text-[#334155]">{item.dni || '-'}</td>
               <td className="px-4 py-3 text-[#334155]">{item.phone || item.email || '-'}</td>
-              {kind === 'employees' ? <td className="px-4 py-3 text-[#334155]">{(item as Employee).hasUser ? 'Asignado' : 'Sin usuario'}</td> : null}
+              {kind === 'employees' ? <td className="px-4 py-3 text-[#334155]">{(item as Employee).hasUser ? 'Assigned' : 'No user'}</td> : null}
               <td className="px-4 py-3">{activeBadge(item.isActive)}</td>
-              <td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td>
+              <td className="px-4 py-3">
+                <div className="flex justify-end gap-2">
+                  {onProfile ? (
+                    <ActionButton onClick={() => onProfile(item)} title="View profile">
+                      <Eye aria-hidden="true" className="size-4" />
+                    </ActionButton>
+                  ) : null}
+                  <StatusActions item={item} onEdit={onEdit} onToggle={onToggle} />
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+function formatDate(value?: string | null) {
+  return value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-US') : '-'
+}
+
+function ClientProfilePanel({
+  isError,
+  isLoading,
+  onClose,
+  profile,
+  refetch,
+}: {
+  isError: boolean
+  isLoading: boolean
+  onClose: () => void
+  profile?: ClientProfile
+  refetch: () => void
+}) {
+  const favoriteSlot = profile?.favoriteDayName && profile.favoriteStartTime
+    ? `${profile.favoriteDayName} ${profile.favoriteStartTime.slice(0, 5)}`
+    : '-'
+  const hasProfileData = Boolean(profile && profile.totalReservations > 0)
+
+  return (
+    <aside className="border-t border-[#E2E8F0] bg-[#F8FAFC] p-4">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h4 className="text-base font-bold text-[#0F172A]">{profile?.clientName ?? 'Customer profile'}</h4>
+          <p className="mt-1 text-sm text-[#475569]">{profile ? `${profile.phone || '-'} - ${profile.email || '-'}` : 'Loading customer metrics...'}</p>
+        </div>
+        <button className="rounded-lg border border-[#CBD5E1] px-3 py-2 text-sm font-bold text-[#334155] transition hover:bg-white" onClick={onClose} type="button">Close</button>
+      </div>
+      {isLoading ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((item) => <div className="h-24 animate-pulse rounded-xl bg-[#E2E8F0]" key={item} />)}
+        </div>
+      ) : isError ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
+          <p className="text-sm font-semibold text-red-700">The customer profile could not be loaded.</p>
+          <button className="rounded-lg border border-red-300 px-3 py-2 text-sm font-bold text-red-700" onClick={refetch} type="button">Retry</button>
+        </div>
+      ) : profile && !hasProfileData ? (
+        <div className="rounded-xl border border-[#CBD5E1] bg-white p-5">
+          <p className="text-sm font-bold text-[#0F172A]">No activity has been recorded for this customer.</p>
+          <p className="mt-1 text-sm text-[#64748B]">Once reservations or payments are recorded, this profile will show activity and lifetime value.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <ProfileMetric label="Customer ID" value={profile.dni || '-'} />
+            <ProfileMetric label="Contact" value={profile.phone || profile.email || '-'} />
+            <ProfileMetric label="Status" value={profile.isActive ? 'Active' : 'Inactive'} />
+          </div>
+        </div>
+      ) : profile ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ProfileMetric label="Reservations" value={String(profile.totalReservations)} />
+          <ProfileMetric label="Paid" value={money.format(profile.totalPaid)} />
+          <ProfileMetric label="Outstanding balance" value={money.format(profile.pendingBalance)} />
+          <ProfileMetric label="Cancellations" value={String(profile.cancellationCount)} />
+          <ProfileMetric label="Favorite time" value={favoriteSlot} />
+          <ProfileMetric label="Last visit" value={formatDate(profile.lastVisitDate)} />
+          <ProfileMetric label="Customer ID" value={profile.dni || '-'} />
+          <ProfileMetric label="Status" value={profile.isActive ? 'Active' : 'Inactive'} />
+        </div>
+      ) : null}
+    </aside>
+  )
+}
+
+function ProfileMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+      <p className="text-xs font-bold uppercase text-[#64748B]">{label}</p>
+      <p className="mt-2 break-words text-lg font-black text-[#0F172A]">{value}</p>
     </div>
   )
 }
@@ -233,6 +320,7 @@ function PeoplePage<TItem extends Client | Employee>({
     update: (id: number, payload: PersonPayload) => Promise<TItem>
     activate: (id: number) => Promise<void>
     deactivate: (id: number) => Promise<void>
+    profile?: (id: number) => Promise<ClientProfile>
   }
   description: string
   kind: 'clients' | 'employees'
@@ -242,9 +330,15 @@ function PeoplePage<TItem extends Client | Employee>({
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [formMode, setFormMode] = useState<FormMode<TItem>>(null)
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
   const [error, setError] = useState<string>()
   const [successMessage, setSuccessMessage] = useState<string>()
   const query = useQuery({ queryKey: [queryKey], queryFn: api.list })
+  const profileQuery = useQuery({
+    enabled: kind === 'clients' && selectedProfileId !== null && Boolean(api.profile),
+    queryKey: ['client-profile', selectedProfileId],
+    queryFn: () => api.profile?.(selectedProfileId ?? 0) ?? Promise.reject(new Error('Customer profile is unavailable.')),
+  })
   const saveMutation = useMutation({
     mutationFn: (payload: PersonPayload) => formMode?.item ? api.update(formMode.item.id, payload) : api.create(payload),
     onMutate: () => {
@@ -264,13 +358,13 @@ function PeoplePage<TItem extends Client | Employee>({
           return nextItems.toSorted((left, right) =>
             `${left.lastName} ${left.firstName}`.localeCompare(
               `${right.lastName} ${right.firstName}`,
-              'es',
+              'en-US',
               { sensitivity: 'base' },
             ))
         })
 
       } catch {
-        setError('El registro se guardó, pero no se pudo actualizar el listado. Recargá la página para verificarlo.')
+        setError('The record was saved, but the list could not be refreshed. Reload the page to verify it.')
         return
       }
 
@@ -279,8 +373,8 @@ function PeoplePage<TItem extends Client | Employee>({
       setError(undefined)
       setSuccessMessage(
         kind === 'employees'
-          ? `Empleado ${wasEditing ? 'actualizado' : 'creado'} correctamente`
-          : `Cliente ${wasEditing ? 'actualizado' : 'creado'} correctamente`,
+          ? `Staff member ${wasEditing ? 'updated' : 'created'} successfully.`
+          : `Customer ${wasEditing ? 'updated' : 'created'} successfully.`,
       )
       void queryClient.invalidateQueries({ queryKey: [queryKey] })
     },
@@ -288,17 +382,21 @@ function PeoplePage<TItem extends Client | Employee>({
   })
   const toggleMutation = useMutation({
     mutationFn: (item: TItem) => item.isActive ? api.deactivate(item.id) : api.activate(item.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [queryKey] }),
+    onSuccess: (_data, item) => {
+      void queryClient.invalidateQueries({ queryKey: [queryKey] })
+      if (kind === 'clients') void queryClient.invalidateQueries({ queryKey: ['client-profile', item.id] })
+    },
   })
   const items = useMemo(() => (query.data ?? []).filter((item) => `${item.firstName} ${item.lastName} ${item.dni ?? ''}`.toLowerCase().includes(search.toLowerCase())), [query.data, search])
 
   return (
     <PageShell
-      actionLabel={`Nuevo ${kind === 'clients' ? 'cliente' : 'empleado'}`}
+      actionLabel={`New ${kind === 'clients' ? 'customer' : 'staff'}`}
       description={description}
       onCreate={() => {
         setError(undefined)
         setSuccessMessage(undefined)
+        setSelectedProfileId(null)
         setFormMode({ item: null })
       }}
       title={title}
@@ -306,19 +404,19 @@ function PeoplePage<TItem extends Client | Employee>({
       {successMessage ? <p aria-live="polite" className="rounded-xl border border-emerald-700/40 bg-emerald-950/40 px-4 py-3 text-sm font-medium text-emerald-200" role="status">{successMessage}</p> : null}
       <SearchBox onChange={setSearch} value={search} />
       <Panel>
-        {formMode ? <PersonForm error={error} initial={toPersonPayload(formMode.item)} isSaving={saveMutation.isPending} onCancel={() => { setFormMode(null); setError(undefined) }} onSubmit={(payload) => saveMutation.mutate(payload)} title={formMode.item ? 'Editar registro' : 'Nuevo registro'} /> : null}
+        {formMode ? <PersonForm error={error} initial={toPersonPayload(formMode.item)} isSaving={saveMutation.isPending} onCancel={() => { setFormMode(null); setError(undefined) }} onSubmit={(payload) => saveMutation.mutate(payload)} title={formMode.item ? 'Edit record' : 'New record'} /> : null}
         {query.isError && query.data ? (
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-700/30 bg-amber-950/30 p-4" role="alert">
-            <p className="text-sm text-amber-200">No se pudo actualizar el listado. Se muestran los últimos datos disponibles.</p>
-            <button className="rounded-md border border-amber-300/60 px-3 py-2 text-sm font-medium text-amber-100" onClick={() => query.refetch()} type="button">Reintentar</button>
+            <p className="text-sm text-amber-200">The list could not be refreshed. Showing the latest available data.</p>
+            <button className="rounded-md border border-amber-300/60 px-3 py-2 text-sm font-medium text-amber-100" onClick={() => query.refetch()} type="button">Retry</button>
           </div>
         ) : null}
         {query.isLoading ? (
-          <p className="p-4 text-sm text-slate-500">Cargando...</p>
+          <p className="p-4 text-sm text-slate-500">Loading...</p>
         ) : query.isError && !query.data ? (
           <div className="flex flex-wrap items-center justify-between gap-3 p-4" role="alert">
-            <p className="text-sm text-red-600">No se pudo cargar el listado. Intentá nuevamente.</p>
-            <button className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700" onClick={() => query.refetch()} type="button">Reintentar</button>
+            <p className="text-sm text-red-600">The list could not be loaded. Try again.</p>
+            <button className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700" onClick={() => query.refetch()} type="button">Retry</button>
           </div>
         ) : (
           <PeopleTable
@@ -327,22 +425,38 @@ function PeoplePage<TItem extends Client | Employee>({
             onEdit={(item) => {
               setError(undefined)
               setSuccessMessage(undefined)
+              setSelectedProfileId(null)
               setFormMode({ item })
             }}
+            onProfile={kind === 'clients' ? (item) => {
+              setFormMode(null)
+              setError(undefined)
+              setSuccessMessage(undefined)
+              setSelectedProfileId((currentId) => currentId === item.id ? null : item.id)
+            } : undefined}
             onToggle={(item) => toggleMutation.mutate(item)}
           />
         )}
+        {kind === 'clients' && selectedProfileId !== null ? (
+          <ClientProfilePanel
+            isError={profileQuery.isError}
+            isLoading={profileQuery.isLoading}
+            onClose={() => setSelectedProfileId(null)}
+            profile={profileQuery.data}
+            refetch={() => { void profileQuery.refetch() }}
+          />
+        ) : null}
       </Panel>
     </PageShell>
   )
 }
 
 export function ClientsPage() {
-  return <PeoplePage api={clientsApi} description="Gestion de jugadores y datos de contacto para futuras reservas." kind="clients" queryKey="clients" title="Clientes" />
+  return <PeoplePage api={clientsApi} description="Manage player profiles and contact details for future reservations." kind="clients" queryKey="clients" title="Customers" />
 }
 
 export function EmployeesPage() {
-  return <PeoplePage api={employeesApi} description="Administracion del personal interno del club." kind="employees" queryKey="employees" title="Empleados" />
+  return <PeoplePage api={employeesApi} description="Manage club staff profiles and contact information." kind="employees" queryKey="employees" title="Staff" />
 }
 
 export function UsersPage() {
@@ -366,11 +480,11 @@ export function UsersPage() {
   const toggleMutation = useMutation({ mutationFn: (item: UserCatalog) => item.isActive ? usersApi.deactivate(item.id) : usersApi.activate(item.id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }) })
 
   return (
-    <PageShell actionLabel="Nuevo usuario" description="Alta, roles y estado de usuarios internos." onCreate={() => setFormMode({ item: null })} title="Usuarios">
+    <PageShell actionLabel="New user" description="Manage internal user accounts, roles, and access status." onCreate={() => setFormMode({ item: null })} title="Users">
       <Panel>
         {formMode ? <UserForm employees={employeesQuery.data ?? []} error={error} initial={formMode.item} isSaving={saveMutation.isPending} onCancel={() => setFormMode(null)} onSubmit={(payload) => saveMutation.mutate(payload)} roles={rolesQuery.data ?? []} /> : null}
         {passwordUser ? <PasswordForm error={error} isSaving={saveMutation.isPending} onCancel={() => setPasswordUser(null)} onSubmit={(password) => usersApi.changePassword(passwordUser.id, password).then(async () => { setPasswordUser(null); await queryClient.invalidateQueries({ queryKey: ['users'] }) }).catch((mutationError: unknown) => setError(getErrorMessage(mutationError)))} username={passwordUser.username} /> : null}
-        {usersQuery.isLoading ? <p className="p-4 text-sm text-slate-500">Cargando...</p> : <UsersTable items={usersQuery.data ?? []} onEdit={(item) => setFormMode({ item })} onPassword={setPasswordUser} onToggle={(item) => toggleMutation.mutate(item)} />}
+        {usersQuery.isLoading ? <p className="p-4 text-sm text-slate-500">Loading...</p> : <UsersTable items={usersQuery.data ?? []} onEdit={(item) => setFormMode({ item })} onPassword={setPasswordUser} onToggle={(item) => toggleMutation.mutate(item)} />}
       </Panel>
     </PageShell>
   )
@@ -398,13 +512,13 @@ function UserForm({ employees, error, initial, isSaving, onCancel, onSubmit, rol
 
   return (
     <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2" onSubmit={submit}>
-      <h4 className="md:col-span-2 text-sm font-semibold">{initial ? 'Editar usuario' : 'Nuevo usuario'}</h4>
+      <h4 className="md:col-span-2 text-sm font-semibold">{initial ? 'Edit user' : 'New user'}</h4>
       <FormControl error={validationErrors.username} label="Username"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={50} onChange={(event) => setUsername(event.target.value)} value={username} /></FormControl>
-      {!initial ? <FormControl error={validationErrors.password} label="Contraseña"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" minLength={8} maxLength={100} onChange={(event) => setPassword(event.target.value)} type="password" value={password} /></FormControl> : null}
-      {!initial ? <FormControl error={validationErrors.employeeId} label="Empleado"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEmployeeId(Number(event.target.value))} value={employeeId || ''}><option value="">Seleccionar empleado</option>{availableEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></FormControl> : <p className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">{initial.employeeName}</p>}
-      <FormControl error={validationErrors.roleId} label="Rol"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setRoleId(Number(event.target.value))} value={roleId || ''}><option value="">Seleccionar rol</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></FormControl>
+      {!initial ? <FormControl error={validationErrors.password} label="Password"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" minLength={8} maxLength={100} onChange={(event) => setPassword(event.target.value)} type="password" value={password} /></FormControl> : null}
+      {!initial ? <FormControl error={validationErrors.employeeId} label="Staff"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEmployeeId(Number(event.target.value))} value={employeeId || ''}><option value="">Select staff</option>{availableEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></FormControl> : <p className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">{initial.employeeName}</p>}
+      <FormControl error={validationErrors.roleId} label="Role"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setRoleId(Number(event.target.value))} value={roleId || ''}><option value="">Select role</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></FormControl>
       {error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}
-      <div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div>
+      <div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancel</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Save</button></div>
     </form>
   )
 }
@@ -412,11 +526,11 @@ function UserForm({ employees, error, initial, isSaving, onCancel, onSubmit, rol
 function PasswordForm({ error, isSaving, onCancel, onSubmit, username }: { error?: string; isSaving: boolean; onCancel: () => void; onSubmit: (password: string) => void; username: string }) {
   const [password, setPassword] = useState('')
   const [validationError, setValidationError] = useState<string>()
-  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); const parsed = passwordSchema.safeParse(password); if (!parsed.success) { setValidationError(parsed.error.issues[0]?.message); return } setValidationError(undefined); onSubmit(parsed.data) }}><h4 className="md:col-span-2 text-sm font-semibold">Cambiar password de {username}</h4><FormControl error={validationError} label="Nueva contraseña"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" minLength={8} maxLength={100} onChange={(event) => setPassword(event.target.value)} type="password" value={password} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); const parsed = passwordSchema.safeParse(password); if (!parsed.success) { setValidationError(parsed.error.issues[0]?.message); return } setValidationError(undefined); onSubmit(parsed.data) }}><h4 className="md:col-span-2 text-sm font-semibold">Change password for {username}</h4><FormControl error={validationError} label="New password"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" minLength={8} maxLength={100} onChange={(event) => setPassword(event.target.value)} type="password" value={password} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancel</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Save</button></div></form>
 }
 
 function UsersTable({ items, onEdit, onPassword, onToggle }: { items: UserCatalog[]; onEdit: (item: UserCatalog) => void; onPassword: (item: UserCatalog) => void; onToggle: (item: UserCatalog) => void }) {
-  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Usuario</th><th className="px-4 py-3">Empleado</th><th className="px-4 py-3">Rol</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3 font-medium">{item.username}</td><td className="px-4 py-3 text-slate-600">{item.employeeName}</td><td className="px-4 py-3 text-slate-600">{item.role}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><div className="flex justify-end gap-2"><ActionButton onClick={() => onEdit(item)} title="Editar"><Pencil aria-hidden="true" className="size-4" /></ActionButton><ActionButton onClick={() => onPassword(item)} title="Cambiar password"><KeyRound aria-hidden="true" className="size-4" /></ActionButton><ActionButton onClick={() => onToggle(item)} title={item.isActive ? 'Desactivar' : 'Activar'}>{item.isActive ? <X aria-hidden="true" className="size-4" /> : <Check aria-hidden="true" className="size-4" />}</ActionButton></div></td></tr>)}</tbody></table></div>
+  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Staff</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3 font-medium">{item.username}</td><td className="px-4 py-3 text-slate-600">{item.employeeName}</td><td className="px-4 py-3 text-slate-600">{item.role}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><div className="flex justify-end gap-2"><ActionButton onClick={() => onEdit(item)} title="Edit"><Pencil aria-hidden="true" className="size-4" /></ActionButton><ActionButton onClick={() => onPassword(item)} title="Change password"><KeyRound aria-hidden="true" className="size-4" /></ActionButton><ActionButton onClick={() => onToggle(item)} title={item.isActive ? 'Deactivate' : 'Activate'}>{item.isActive ? <X aria-hidden="true" className="size-4" /> : <Check aria-hidden="true" className="size-4" />}</ActionButton></div></td></tr>)}</tbody></table></div>
 }
 
 export function CourtsPage() {
@@ -433,13 +547,13 @@ function CourtsManagementPage() {
   const courtSave = useMutation({ mutationFn: (payload: CourtPayload) => courtForm?.item ? courtsApi.update(courtForm.item.id, payload) : courtsApi.create(payload), onSuccess: async () => { setCourtForm(null); setError(undefined); await queryClient.invalidateQueries({ queryKey: ['courts'] }) }, onError: (mutationError) => setError(getErrorMessage(mutationError)) })
   const typeSave = useMutation({ mutationFn: (description: string) => typeForm && typeForm !== 'new' ? courtTypesApi.update(typeForm.id, description) : courtTypesApi.create(description), onSuccess: async () => { setTypeForm(null); setError(undefined); await queryClient.invalidateQueries({ queryKey: ['court-types'] }) }, onError: (mutationError) => setError(getErrorMessage(mutationError)) })
   const toggle = useMutation({ mutationFn: (item: Court) => item.isActive ? courtsApi.deactivate(item.id) : courtsApi.activate(item.id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courts'] }) })
-  return <PageShell actionLabel="Nueva cancha" description="Catalogo de canchas, tipos y precio por hora." onCreate={() => setCourtForm({ item: null })} title="Canchas"><Panel>{courtForm ? <CourtForm error={error} initial={courtForm.item} isSaving={courtSave.isPending} onCancel={() => setCourtForm(null)} onSubmit={(payload) => courtSave.mutate(payload)} types={typesQuery.data ?? []} /> : null}<div className="border-b border-slate-200 p-4"><div className="mb-3 flex items-center justify-between"><h4 className="text-sm font-semibold">Tipos de cancha</h4><button className="text-sm font-semibold text-emerald-700" onClick={() => setTypeForm('new')} type="button">Agregar tipo</button></div>{typeForm ? <CourtTypeForm error={error} initial={typeForm === 'new' ? '' : typeForm.description} isSaving={typeSave.isPending} onCancel={() => setTypeForm(null)} onSubmit={(description) => typeSave.mutate(description)} /> : null}<div className="flex flex-wrap gap-2">{(typesQuery.data ?? []).map((type) => <button className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700" key={type.id} onClick={() => setTypeForm(type)} type="button">{type.description}</button>)}</div></div>{courtsQuery.isLoading ? <p className="p-4 text-sm text-slate-500">Cargando...</p> : <CourtsTable items={courtsQuery.data ?? []} onEdit={(item) => setCourtForm({ item })} onToggle={(item) => toggle.mutate(item)} />}</Panel></PageShell>
+  return <PageShell actionLabel="New court" description="Court catalog, surface types, and hourly pricing." onCreate={() => setCourtForm({ item: null })} title="Courts"><Panel>{courtForm ? <CourtForm error={error} initial={courtForm.item} isSaving={courtSave.isPending} onCancel={() => setCourtForm(null)} onSubmit={(payload) => courtSave.mutate(payload)} types={typesQuery.data ?? []} /> : null}<div className="border-b border-slate-200 p-4"><div className="mb-3 flex items-center justify-between"><h4 className="text-sm font-semibold">Court types</h4><button className="text-sm font-semibold text-emerald-700" onClick={() => setTypeForm('new')} type="button">Add type</button></div>{typeForm ? <CourtTypeForm error={error} initial={typeForm === 'new' ? '' : typeForm.description} isSaving={typeSave.isPending} onCancel={() => setTypeForm(null)} onSubmit={(description) => typeSave.mutate(description)} /> : null}<div className="flex flex-wrap gap-2">{(typesQuery.data ?? []).map((type) => <button className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700" key={type.id} onClick={() => setTypeForm(type)} type="button">{type.description}</button>)}</div></div>{courtsQuery.isLoading ? <p className="p-4 text-sm text-slate-500">Loading...</p> : <CourtsTable items={courtsQuery.data ?? []} onEdit={(item) => setCourtForm({ item })} onToggle={(item) => toggle.mutate(item)} />}</Panel></PageShell>
 }
 
 function CourtTypeForm({ error, initial, isSaving, onCancel, onSubmit }: { error?: string; initial: string; isSaving: boolean; onCancel: () => void; onSubmit: (description: string) => void }) {
   const [description, setDescription] = useState(initial)
   const [validationError, setValidationError] = useState<string>()
-  return <form className="mb-3 flex flex-wrap items-start gap-2" onSubmit={(event) => { event.preventDefault(); const parsed = courtTypeSchema.safeParse(description); if (!parsed.success) { setValidationError(parsed.error.issues[0]?.message); return } setValidationError(undefined); onSubmit(parsed.data) }}><FormControl error={validationError} label="Descripción"><input required className="min-w-64 rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setDescription(event.target.value)} value={description} /></FormControl><button className="mt-6 rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button><button className="mt-6 rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button>{error ? <p className="basis-full text-sm text-red-600">{error}</p> : null}</form>
+  return <form className="mb-3 flex flex-wrap items-start gap-2" onSubmit={(event) => { event.preventDefault(); const parsed = courtTypeSchema.safeParse(description); if (!parsed.success) { setValidationError(parsed.error.issues[0]?.message); return } setValidationError(undefined); onSubmit(parsed.data) }}><FormControl error={validationError} label="Description"><input required className="min-w-64 rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setDescription(event.target.value)} value={description} /></FormControl><button className="mt-6 rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Save</button><button className="mt-6 rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancel</button>{error ? <p className="basis-full text-sm text-red-600">{error}</p> : null}</form>
 }
 
 function CourtForm({ error, initial, isSaving, onCancel, onSubmit, types }: { error?: string; initial: Court | null; isSaving: boolean; onCancel: () => void; onSubmit: (payload: CourtPayload) => void; types: CourtType[] }) {
@@ -447,11 +561,11 @@ function CourtForm({ error, initial, isSaving, onCancel, onSubmit, types }: { er
   const [courtTypeId, setCourtTypeId] = useState(initial?.courtTypeId ?? types[0]?.id ?? 0)
   const [hourPrice, setHourPrice] = useState(String(initial?.hourPrice ?? ''))
   const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
-  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); const parsed = courtSchema.safeParse({ name, courtTypeId, hourPrice: hourPrice === '' ? Number.NaN : Number(hourPrice) }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit(parsed.data) }}><h4 className="md:col-span-3 text-sm font-semibold">{initial ? 'Editar cancha' : 'Nueva cancha'}</h4><FormControl error={validationErrors.name} label="Nombre"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setName(event.target.value)} value={name} /></FormControl><FormControl error={validationErrors.courtTypeId} label="Tipo"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtTypeId(Number(event.target.value))} value={courtTypeId || ''}><option value="">Seleccionar tipo</option>{types.map((type) => <option key={type.id} value={type.id}>{type.description}</option>)}</select></FormControl><FormControl error={validationErrors.hourPrice} label="Precio por hora"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" min="0.01" step="0.01" onChange={(event) => setHourPrice(event.target.value)} type="number" value={hourPrice} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  return <form className="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); const parsed = courtSchema.safeParse({ name, courtTypeId, hourPrice: hourPrice === '' ? Number.NaN : Number(hourPrice) }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit(parsed.data) }}><h4 className="md:col-span-3 text-sm font-semibold">{initial ? 'Edit court' : 'New court'}</h4><FormControl error={validationErrors.name} label="Court name"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setName(event.target.value)} value={name} /></FormControl><FormControl error={validationErrors.courtTypeId} label="Type"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtTypeId(Number(event.target.value))} value={courtTypeId || ''}><option value="">Select type</option>{types.map((type) => <option key={type.id} value={type.id}>{type.description}</option>)}</select></FormControl><FormControl error={validationErrors.hourPrice} label="Hourly price"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" min="0.01" step="0.01" onChange={(event) => setHourPrice(event.target.value)} type="number" value={hourPrice} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancel</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Save</button></div></form>
 }
 
 function CourtsTable({ items, onEdit, onToggle }: { items: Court[]; onEdit: (item: Court) => void; onToggle: (item: Court) => void }) {
-  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Cancha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Precio</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3 font-medium">{item.name}</td><td className="px-4 py-3 text-slate-600">{item.courtType}</td><td className="px-4 py-3 text-slate-600">${item.hourPrice}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td></tr>)}</tbody></table></div>
+  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Court</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Price</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3 font-medium">{item.name}</td><td className="px-4 py-3 text-slate-600">{item.courtType}</td><td className="px-4 py-3 text-slate-600">${item.hourPrice}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td></tr>)}</tbody></table></div>
 }
 
 export function TurnsPage() {
@@ -462,7 +576,7 @@ export function TurnsPage() {
   const courtsQuery = useQuery({ queryKey: ['courts'], queryFn: courtsApi.list })
   const save = useMutation({ mutationFn: (payload: TurnPayload) => formMode?.item ? turnsApi.update(formMode.item.id, payload) : turnsApi.create(payload), onSuccess: async () => { setFormMode(null); setError(undefined); await queryClient.invalidateQueries({ queryKey: ['turns'] }) }, onError: (mutationError) => setError(getErrorMessage(mutationError)) })
   const toggle = useMutation({ mutationFn: (item: AvailableTurn) => item.isActive ? turnsApi.deactivate(item.id) : turnsApi.activate(item.id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['turns'] }) })
-  return <PageShell actionLabel="Nuevo turno" description="Horarios disponibles por cancha para alimentar reservas." onCreate={() => setFormMode({ item: null })} title="Turnos">{formMode ? <Panel><TurnForm courts={courtsQuery.data ?? []} error={error} initial={formMode.item} isSaving={save.isPending} onCancel={() => setFormMode(null)} onSubmit={(payload) => save.mutate(payload)} /></Panel> : null}<Panel>{turnsQuery.isLoading ? <p className="p-4 text-sm text-slate-500">Cargando...</p> : <TurnsTable items={turnsQuery.data ?? []} onEdit={(item) => setFormMode({ item })} onToggle={(item) => toggle.mutate(item)} />}</Panel></PageShell>
+  return <PageShell actionLabel="New time slot" description="Available court time slots used for reservations." onCreate={() => setFormMode({ item: null })} title="Time slots">{formMode ? <Panel><TurnForm courts={courtsQuery.data ?? []} error={error} initial={formMode.item} isSaving={save.isPending} onCancel={() => setFormMode(null)} onSubmit={(payload) => save.mutate(payload)} /></Panel> : null}<Panel>{turnsQuery.isLoading ? <p className="p-4 text-sm text-slate-500">Loading...</p> : <TurnsTable items={turnsQuery.data ?? []} onEdit={(item) => setFormMode({ item })} onToggle={(item) => toggle.mutate(item)} />}</Panel></PageShell>
 }
 
 function TurnForm({ courts, error, initial, isSaving, onCancel, onSubmit }: { courts: Court[]; error?: string; initial: AvailableTurn | null; isSaving: boolean; onCancel: () => void; onSubmit: (payload: TurnPayload) => void }) {
@@ -470,11 +584,11 @@ function TurnForm({ courts, error, initial, isSaving, onCancel, onSubmit }: { co
   const [startTime, setStartTime] = useState((initial?.startTime ?? '09:00').slice(0, 5))
   const [endTime, setEndTime] = useState((initial?.endTime ?? '10:00').slice(0, 5))
   const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
-  return <form className="grid gap-3 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); const parsed = turnSchema.safeParse({ courtId, startTime, endTime }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit({ courtId: parsed.data.courtId, startTime: `${parsed.data.startTime}:00`, endTime: `${parsed.data.endTime}:00` }) }}><FormControl error={validationErrors.courtId} label="Cancha"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtId(Number(event.target.value))} value={courtId || ''}><option value="">Seleccionar cancha</option>{courts.map((court) => <option key={court.id} value={court.id}>{court.name}</option>)}</select></FormControl><FormControl error={validationErrors.startTime} label="Hora de inicio"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setStartTime(event.target.value)} type="time" value={startTime} /></FormControl><FormControl error={validationErrors.endTime} label="Hora de fin"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEndTime(event.target.value)} type="time" value={endTime} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  return <form className="grid gap-3 p-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); const parsed = turnSchema.safeParse({ courtId, startTime, endTime }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit({ courtId: parsed.data.courtId, startTime: `${parsed.data.startTime}:00`, endTime: `${parsed.data.endTime}:00` }) }}><FormControl error={validationErrors.courtId} label="Court"><select required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setCourtId(Number(event.target.value))} value={courtId || ''}><option value="">Select court</option>{courts.map((court) => <option key={court.id} value={court.id}>{court.name}</option>)}</select></FormControl><FormControl error={validationErrors.startTime} label="Start time"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setStartTime(event.target.value)} type="time" value={startTime} /></FormControl><FormControl error={validationErrors.endTime} label="End time"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setEndTime(event.target.value)} type="time" value={endTime} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-3">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-3"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancel</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Save</button></div></form>
 }
 
 function TurnsTable({ items, onEdit, onToggle }: { items: AvailableTurn[]; onEdit: (item: AvailableTurn) => void; onToggle: (item: AvailableTurn) => void }) {
-  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Cancha</th><th className="px-4 py-3">Inicio</th><th className="px-4 py-3">Fin</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3 font-medium">{item.courtName}</td><td className="px-4 py-3 text-slate-600">{item.startTime.slice(0, 5)}</td><td className="px-4 py-3 text-slate-600">{item.endTime.slice(0, 5)}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td></tr>)}</tbody></table></div>
+  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Court</th><th className="px-4 py-3">Start</th><th className="px-4 py-3">End</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3 font-medium">{item.courtName}</td><td className="px-4 py-3 text-slate-600">{item.startTime.slice(0, 5)}</td><td className="px-4 py-3 text-slate-600">{item.endTime.slice(0, 5)}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td></tr>)}</tbody></table></div>
 }
 
 export function PromotionsPage() {
@@ -484,7 +598,7 @@ export function PromotionsPage() {
   const query = useQuery({ queryKey: ['promotions'], queryFn: promotionsApi.list })
   const save = useMutation({ mutationFn: (payload: PromotionPayload) => formMode?.item ? promotionsApi.update(formMode.item.id, payload) : promotionsApi.create(payload), onSuccess: async () => { setFormMode(null); setError(undefined); await queryClient.invalidateQueries({ queryKey: ['promotions'] }) }, onError: (mutationError) => setError(getErrorMessage(mutationError)) })
   const toggle = useMutation({ mutationFn: (item: Promotion) => item.isActive ? promotionsApi.deactivate(item.id) : promotionsApi.activate(item.id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['promotions'] }) })
-  return <PageShell actionLabel="Nueva promocion" description="Descuentos activos y vigentes para aplicar en reservas." onCreate={() => setFormMode({ item: null })} title="Promociones">{formMode ? <Panel><PromotionForm error={error} initial={formMode.item} isSaving={save.isPending} onCancel={() => setFormMode(null)} onSubmit={(payload) => save.mutate(payload)} /></Panel> : null}<Panel>{query.isLoading ? <p className="p-4 text-sm text-slate-500">Cargando...</p> : <PromotionsTable items={query.data ?? []} onEdit={(item) => setFormMode({ item })} onToggle={(item) => toggle.mutate(item)} />}</Panel></PageShell>
+  return <PageShell actionLabel="New promotion" description="Active discounts that can be applied to reservations." onCreate={() => setFormMode({ item: null })} title="Promotions">{formMode ? <Panel><PromotionForm error={error} initial={formMode.item} isSaving={save.isPending} onCancel={() => setFormMode(null)} onSubmit={(payload) => save.mutate(payload)} /></Panel> : null}<Panel>{query.isLoading ? <p className="p-4 text-sm text-slate-500">Loading...</p> : <PromotionsTable items={query.data ?? []} onEdit={(item) => setFormMode({ item })} onToggle={(item) => toggle.mutate(item)} />}</Panel></PageShell>
 }
 
 function PromotionForm({ error, initial, isSaving, onCancel, onSubmit }: { error?: string; initial: Promotion | null; isSaving: boolean; onCancel: () => void; onSubmit: (payload: PromotionPayload) => void }) {
@@ -494,9 +608,9 @@ function PromotionForm({ error, initial, isSaving, onCancel, onSubmit }: { error
   const [dateFrom, setDateFrom] = useState(initial?.dateFrom ?? new Date().toISOString().slice(0, 10))
   const [dateTo, setDateTo] = useState(initial?.dateTo ?? new Date().toISOString().slice(0, 10))
   const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
-  return <form className="grid gap-3 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); const parsed = promotionSchema.safeParse({ name, description, discountPercentage: discountPercentage === '' ? Number.NaN : Number(discountPercentage), dateFrom, dateTo }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit(parsed.data) }}><FormControl error={validationErrors.name} label="Nombre"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setName(event.target.value)} value={name} /></FormControl><FormControl error={validationErrors.discountPercentage} label="Descuento %"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" max="100" min="0.01" step="0.01" onChange={(event) => setDiscountPercentage(event.target.value)} type="number" value={discountPercentage} /></FormControl><FormControl className="md:col-span-2" error={validationErrors.description} label="Descripción (opcional)"><input className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={255} onChange={(event) => setDescription(event.target.value)} value={description} /></FormControl><FormControl error={validationErrors.dateFrom} label="Desde"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} /></FormControl><FormControl error={validationErrors.dateTo} label="Hasta"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancelar</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Guardar</button></div></form>
+  return <form className="grid gap-3 p-4 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); const parsed = promotionSchema.safeParse({ name, description, discountPercentage: discountPercentage === '' ? Number.NaN : Number(discountPercentage), dateFrom, dateTo }); if (!parsed.success) { setValidationErrors(toFieldErrors(parsed.error)); return } setValidationErrors({}); onSubmit(parsed.data) }}><FormControl error={validationErrors.name} label="Promotion name"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={80} onChange={(event) => setName(event.target.value)} value={name} /></FormControl><FormControl error={validationErrors.discountPercentage} label="Discount %"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" max="100" min="0.01" step="0.01" onChange={(event) => setDiscountPercentage(event.target.value)} type="number" value={discountPercentage} /></FormControl><FormControl className="md:col-span-2" error={validationErrors.description} label="Description (optional)"><input className="rounded-md border border-slate-200 px-3 py-2 text-sm" maxLength={255} onChange={(event) => setDescription(event.target.value)} value={description} /></FormControl><FormControl error={validationErrors.dateFrom} label="From"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} /></FormControl><FormControl error={validationErrors.dateTo} label="To"><input required className="rounded-md border border-slate-200 px-3 py-2 text-sm" onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} /></FormControl>{error ? <p className="text-sm text-red-600 md:col-span-2">{error}</p> : null}<div className="flex justify-end gap-2 md:col-span-2"><button className="rounded-md border border-slate-200 px-3 py-2 text-sm" onClick={onCancel} type="button">Cancel</button><button className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" disabled={isSaving} type="submit">Save</button></div></form>
 }
 
 function PromotionsTable({ items, onEdit, onToggle }: { items: Promotion[]; onEdit: (item: Promotion) => void; onToggle: (item: Promotion) => void }) {
-  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Promocion</th><th className="px-4 py-3">Descuento</th><th className="px-4 py-3">Vigencia</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3"><p className="font-medium">{item.name}</p><p className="text-xs text-slate-500">{item.description ?? '-'}</p></td><td className="px-4 py-3 text-slate-600">{item.discountPercentage}%</td><td className="px-4 py-3 text-slate-600">{item.dateFrom} / {item.dateTo}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td></tr>)}</tbody></table></div>
+  return <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Promotion</th><th className="px-4 py-3">Discount</th><th className="px-4 py-3">Valid dates</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-3"><p className="font-medium">{item.name}</p><p className="text-xs text-slate-500">{item.description ?? '-'}</p></td><td className="px-4 py-3 text-slate-600">{item.discountPercentage}%</td><td className="px-4 py-3 text-slate-600">{item.dateFrom} / {item.dateTo}</td><td className="px-4 py-3">{activeBadge(item.isActive)}</td><td className="px-4 py-3"><StatusActions item={item} onEdit={onEdit} onToggle={onToggle} /></td></tr>)}</tbody></table></div>
 }

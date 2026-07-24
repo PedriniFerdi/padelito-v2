@@ -1,5 +1,5 @@
 import { apiFetch } from './http'
-import type { Reservation, ReservationAvailability, ReservationDetail } from '@/types/api'
+import type { OperationsBoard, Reservation, ReservationAvailability, ReservationDetail } from '@/types/api'
 
 export type ReservationView = 'active' | 'history'
 
@@ -31,6 +31,7 @@ export const reservationsApi = {
     apiFetch<Reservation[]>(`/api/reservations?${queryString(filters)}`),
   availability: (date: string) =>
     apiFetch<ReservationAvailability[]>(`/api/reservations/availability?date=${encodeURIComponent(date)}`),
+  operationsBoard: () => apiFetch<OperationsBoard>('/api/reservations/operations-board'),
   detail: (id: number) => apiFetch<ReservationDetail>(`/api/reservations/${id}`),
   create: (payload: ReservationCreatePayload) =>
     apiFetch<ReservationDetail>('/api/reservations', {

@@ -3,7 +3,7 @@ export type ApiError = {
   statusCode?: number
 }
 
-export type Role = 'Administrador' | 'Recepcion' | 'Empleado'
+export type Role = 'Admin' | 'Reception' | 'Staff'
 
 export type CurrentUser = {
   userId: number
@@ -34,6 +34,22 @@ export type PersonCatalogItem = {
 }
 
 export type Client = PersonCatalogItem
+
+export type ClientProfile = {
+  clientId: number
+  clientName: string
+  dni: string
+  phone: string
+  email: string
+  isActive: boolean
+  totalReservations: number
+  totalPaid: number
+  pendingBalance: number
+  favoriteDayName?: string | null
+  favoriteStartTime?: string | null
+  lastVisitDate?: string | null
+  cancellationCount: number
+}
 
 export type Employee = PersonCatalogItem & {
   hasUser: boolean
@@ -87,7 +103,7 @@ export type Promotion = {
   isActive: boolean
 }
 
-export type ReservationStatus = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Finalizada'
+export type ReservationStatus = 'Pending' | 'Confirmed' | 'Canceled' | 'Completed'
 
 export type Reservation = {
   id: number
@@ -115,7 +131,7 @@ export type ReservationDetail = Reservation & {
   discountPercentage?: number | null
   totalPaid: number
   pendingBalance: number
-  paymentStatus: 'Sin pagos' | 'Pago parcial' | 'Pagada'
+  paymentStatus: 'Unpaid' | 'Partially paid' | 'Paid'
 }
 
 export type ReservationAvailability = {
@@ -126,6 +142,42 @@ export type ReservationAvailability = {
   startTime: string
   endTime: string
   basePrice: number
+}
+
+export type OperationsReservation = {
+  id: number
+  reservationDate: string
+  clientId: number
+  clientName: string
+  availableTurnId: number
+  courtId: number
+  courtName: string
+  startTime: string
+  endTime: string
+  reservationStatusId: number
+  status: ReservationStatus
+  finalPrice: number
+  totalPaid: number
+  pendingBalance: number
+  paymentStatus: 'Unpaid' | 'Partially paid' | 'Paid'
+}
+
+export type OperationsCourtTimeline = {
+  courtId: number
+  courtName: string
+  reservations: OperationsReservation[]
+}
+
+export type OperationsBoard = {
+  operationalDate: string
+  generatedAt: string
+  reservationsToday: number
+  upcomingUnpaidCount: number
+  startingSoonCount: number
+  completedCount: number
+  timelineByCourt: OperationsCourtTimeline[]
+  upcomingUnpaidReservations: OperationsReservation[]
+  startingSoonReservations: OperationsReservation[]
 }
 
 export type PaymentMethod = { id: number; description: string }
@@ -228,7 +280,7 @@ export type ReservationReportRow = {
   finalPrice: number
   totalPaid: number
   pendingBalance: number
-  paymentStatus: 'Sin pagos' | 'Pago parcial' | 'Pagada'
+  paymentStatus: 'Unpaid' | 'Partially paid' | 'Paid'
 }
 
 export type ReservationReport = {

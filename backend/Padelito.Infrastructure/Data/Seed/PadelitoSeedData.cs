@@ -8,26 +8,26 @@ internal static class PadelitoSeedData
     public static void Apply(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Role>().HasData(
-            new Role { Id = 1, Name = "Administrador" },
-            new Role { Id = 2, Name = "Recepcion" },
-            new Role { Id = 3, Name = "Empleado" });
+            new Role { Id = 1, Name = "Admin" },
+            new Role { Id = 2, Name = "Reception" },
+            new Role { Id = 3, Name = "Staff" });
 
         modelBuilder.Entity<ReservationStatus>().HasData(
-            new ReservationStatus { Id = 1, Name = "Pendiente" },
-            new ReservationStatus { Id = 2, Name = "Confirmada" },
-            new ReservationStatus { Id = 3, Name = "Cancelada" },
-            new ReservationStatus { Id = 4, Name = "Finalizada" });
+            new ReservationStatus { Id = 1, Name = "Pending" },
+            new ReservationStatus { Id = 2, Name = "Confirmed" },
+            new ReservationStatus { Id = 3, Name = "Canceled" },
+            new ReservationStatus { Id = 4, Name = "Completed" });
 
         modelBuilder.Entity<PaymentMethod>().HasData(
-            new PaymentMethod { Id = 1, Description = "Efectivo" },
-            new PaymentMethod { Id = 2, Description = "Tarjeta de debito" },
-            new PaymentMethod { Id = 3, Description = "Tarjeta de credito" },
-            new PaymentMethod { Id = 4, Description = "Transferencia" },
-            new PaymentMethod { Id = 5, Description = "Mercado Pago" });
+            new PaymentMethod { Id = 1, Description = "Cash" },
+            new PaymentMethod { Id = 2, Description = "Debit Card" },
+            new PaymentMethod { Id = 3, Description = "Credit Card" },
+            new PaymentMethod { Id = 4, Description = "Bank Transfer" },
+            new PaymentMethod { Id = 5, Description = "Venmo" });
 
         modelBuilder.Entity<CourtType>().HasData(
-            new CourtType { Id = 1, Description = "Cemento" },
-            new CourtType { Id = 2, Description = "Sintetico" },
+            new CourtType { Id = 1, Description = "Concrete" },
+            new CourtType { Id = 2, Description = "Synthetic Turf" },
             new CourtType { Id = 3, Description = "Indoor" },
             new CourtType { Id = 4, Description = "Premium" });
     }

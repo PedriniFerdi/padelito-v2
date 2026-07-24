@@ -38,7 +38,7 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(_ =>
 {
-    var timeZoneId = builder.Configuration["Club:TimeZone"] ?? "America/Argentina/Buenos_Aires";
+    var timeZoneId = builder.Configuration["Club:TimeZone"] ?? "America/New_York";
     return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
 });
 
@@ -83,8 +83,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Administrador"));
-    options.AddPolicy("AdminOrReception", policy => policy.RequireRole("Administrador", "Recepcion"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("AdminOrReception", policy => policy.RequireRole("Admin", "Reception"));
     options.AddPolicy("AuthenticatedStaff", policy => policy.RequireAuthenticatedUser());
 });
 

@@ -1,4 +1,4 @@
-export const CLUB_TIME_ZONE = 'America/Argentina/Buenos_Aires'
+export const CLUB_TIME_ZONE = 'America/New_York'
 
 export function todayInClub(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en', {

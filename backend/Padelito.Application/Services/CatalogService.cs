@@ -24,6 +24,45 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         return ToClientDetailDto(await RequireClientAsync(id, cancellationToken));
     }
 
+    public async Task<ClientProfileDto> GetClientProfileAsync(int id, int clubId, CancellationToken cancellationToken)
+    {
+        var client = await repository.GetClientProfileAsync(id, clubId, cancellationToken)
+            ?? throw new BusinessException("The customer does not exist.");
+
+        var reservations = client.Reservations.ToList();
+        var nonCancelledReservations = reservations.Where(x => x.ReservationStatusId != ReservationStatusIds.Cancelled).ToList();
+        var completedReservations = reservations.Where(x => x.ReservationStatusId == ReservationStatusIds.Completed).ToList();
+        var totalPaid = nonCancelledReservations.Sum(x => x.Payments.Sum(payment => payment.Amount));
+        var pendingBalance = nonCancelledReservations.Sum(x => Math.Max(0, x.FinalPrice - x.Payments.Sum(payment => payment.Amount)));
+        var favoriteSlot = completedReservations
+            .GroupBy(x => new { x.ReservationDate.DayOfWeek, x.AvailableTurn.StartTime })
+            .Select(group => new
+            {
+                group.Key.DayOfWeek,
+                group.Key.StartTime,
+                Count = group.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => DayOfWeekSortValue(x.DayOfWeek))
+            .ThenBy(x => x.StartTime)
+            .FirstOrDefault();
+
+        return new ClientProfileDto(
+            client.Id,
+            FullName(client.Person),
+            client.Person.Dni ?? string.Empty,
+            client.Person.Phone ?? string.Empty,
+            client.Person.Email ?? string.Empty,
+            client.Person.IsActive,
+            reservations.Count,
+            totalPaid,
+            pendingBalance,
+            favoriteSlot is null ? null : ToEnglishDayName(favoriteSlot.DayOfWeek),
+            favoriteSlot?.StartTime,
+            completedReservations.Count == 0 ? null : completedReservations.Max(x => x.ReservationDate),
+            reservations.Count(x => x.ReservationStatusId == ReservationStatusIds.Cancelled));
+    }
+
     public async Task<ClientDetailDto> CreateClientAsync(ClientCreateDto request, CancellationToken cancellationToken)
     {
         await ValidateDniAsync(request.Dni, null, cancellationToken);
@@ -115,24 +154,24 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task<UserDetailDto> CreateUserAsync(UserCreateDto request, CancellationToken cancellationToken)
     {
-        var username = RequireText(request.Username, "El username es obligatorio.", 50);
+        var username = RequireText(request.Username, "Username is required.", 50);
         ValidatePassword(request.Password);
 
         if (await repository.UsernameExistsAsync(username, null, cancellationToken))
         {
-            throw new BusinessException("Ya existe un usuario con ese username.");
+            throw new BusinessException("A user with that username already exists.");
         }
 
         var employee = await RequireEmployeeAsync(request.EmployeeId, cancellationToken);
         if (!employee.Person.IsActive)
         {
-            throw new BusinessException("No se puede crear un usuario para un empleado inactivo.");
+            throw new BusinessException("Users cannot be created for inactive staff members.");
         }
 
-        _ = await repository.GetRoleAsync(request.RoleId, cancellationToken) ?? throw new BusinessException("El rol indicado no existe.");
+        _ = await repository.GetRoleAsync(request.RoleId, cancellationToken) ?? throw new BusinessException("The selected role does not exist.");
         if (await repository.EmployeeHasUserAsync(request.EmployeeId, null, cancellationToken))
         {
-            throw new BusinessException("El empleado ya tiene un usuario asociado.");
+            throw new BusinessException("The staff member already has an associated user.");
         }
 
         var user = new User
@@ -155,13 +194,13 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     public async Task<UserDetailDto> UpdateUserAsync(int id, UserUpdateDto request, CancellationToken cancellationToken)
     {
         var user = await RequireUserAsync(id, cancellationToken);
-        var username = RequireText(request.Username, "El username es obligatorio.", 50);
+        var username = RequireText(request.Username, "Username is required.", 50);
         if (await repository.UsernameExistsAsync(username, id, cancellationToken))
         {
-            throw new BusinessException("Ya existe un usuario con ese username.");
+            throw new BusinessException("A user with that username already exists.");
         }
 
-        _ = await repository.GetRoleAsync(request.RoleId, cancellationToken) ?? throw new BusinessException("El rol indicado no existe.");
+        _ = await repository.GetRoleAsync(request.RoleId, cancellationToken) ?? throw new BusinessException("The selected role does not exist.");
         user.Username = username;
         user.RoleId = request.RoleId;
         await repository.SaveChangesAsync(cancellationToken);
@@ -182,7 +221,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var user = await RequireUserAsync(id, cancellationToken);
         if (isActive && !user.Employee.Person.IsActive)
         {
-            throw new BusinessException("No se puede activar un usuario de un empleado inactivo.");
+            throw new BusinessException("Users for inactive staff members cannot be activated.");
         }
 
         user.IsActive = isActive;
@@ -201,10 +240,10 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task<CourtTypeDto> CreateCourtTypeAsync(CourtTypeCreateDto request, CancellationToken cancellationToken)
     {
-        var description = RequireText(request.Description, "La descripcion es obligatoria.", 80);
+        var description = RequireText(request.Description, "Description is required.", 80);
         if (await repository.CourtTypeExistsAsync(description, null, cancellationToken))
         {
-            throw new BusinessException("Ya existe un tipo de cancha con esa descripcion.");
+            throw new BusinessException("A court type with that description already exists.");
         }
 
         var courtType = new CourtType { Description = description };
@@ -215,11 +254,11 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task<CourtTypeDto> UpdateCourtTypeAsync(int id, CourtTypeUpdateDto request, CancellationToken cancellationToken)
     {
-        var courtType = await repository.GetCourtTypeAsync(id, cancellationToken) ?? throw new BusinessException("El tipo de cancha no existe.");
-        var description = RequireText(request.Description, "La descripcion es obligatoria.", 80);
+        var courtType = await repository.GetCourtTypeAsync(id, cancellationToken) ?? throw new BusinessException("The court type does not exist.");
+        var description = RequireText(request.Description, "Description is required.", 80);
         if (await repository.CourtTypeExistsAsync(description, id, cancellationToken))
         {
-            throw new BusinessException("Ya existe un tipo de cancha con esa descripcion.");
+            throw new BusinessException("A court type with that description already exists.");
         }
 
         courtType.Description = description;
@@ -241,10 +280,10 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     {
         ValidateCourt(request.Name, request.HourPrice);
         var name = request.Name.Trim();
-        var courtType = await repository.GetCourtTypeAsync(request.CourtTypeId, cancellationToken) ?? throw new BusinessException("El tipo de cancha indicado no existe.");
+        var courtType = await repository.GetCourtTypeAsync(request.CourtTypeId, cancellationToken) ?? throw new BusinessException("The selected court type does not exist.");
         if (await repository.CourtNameExistsAsync(clubId, name, null, cancellationToken))
         {
-            throw new BusinessException("Ya existe una cancha con ese nombre.");
+            throw new BusinessException("A court with that name already exists.");
         }
 
         var court = new Court { ClubId = clubId, Name = name, CourtTypeId = request.CourtTypeId, CourtType = courtType, HourPrice = request.HourPrice, IsActive = true };
@@ -258,10 +297,10 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var court = await RequireCourtAsync(id, cancellationToken);
         ValidateCourt(request.Name, request.HourPrice);
         var name = request.Name.Trim();
-        var courtType = await repository.GetCourtTypeAsync(request.CourtTypeId, cancellationToken) ?? throw new BusinessException("El tipo de cancha indicado no existe.");
+        var courtType = await repository.GetCourtTypeAsync(request.CourtTypeId, cancellationToken) ?? throw new BusinessException("The selected court type does not exist.");
         if (await repository.CourtNameExistsAsync(court.ClubId, name, id, cancellationToken))
         {
-            throw new BusinessException("Ya existe una cancha con ese nombre.");
+            throw new BusinessException("A court with that name already exists.");
         }
 
         court.Name = name;
@@ -298,7 +337,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task<AvailableTurnListDto> UpdateAvailableTurnAsync(int id, AvailableTurnUpdateDto request, CancellationToken cancellationToken)
     {
-        var turn = await repository.GetAvailableTurnAsync(id, cancellationToken) ?? throw new BusinessException("El turno no existe.");
+        var turn = await repository.GetAvailableTurnAsync(id, cancellationToken) ?? throw new BusinessException("The time slot does not exist.");
         ValidateTurn(request.StartTime, request.EndTime);
         var court = await RequireCourtAsync(request.CourtId, cancellationToken);
         if (turn.IsActive)
@@ -316,7 +355,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     public async Task SetAvailableTurnActiveAsync(int id, bool isActive, CancellationToken cancellationToken)
     {
-        var turn = await repository.GetAvailableTurnAsync(id, cancellationToken) ?? throw new BusinessException("El turno no existe.");
+        var turn = await repository.GetAvailableTurnAsync(id, cancellationToken) ?? throw new BusinessException("The time slot does not exist.");
         if (isActive && !turn.IsActive)
         {
             await EnsureTurnDoesNotOverlapAsync(turn.CourtId, turn.StartTime, turn.EndTime, turn.Id, cancellationToken);
@@ -375,27 +414,27 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private async Task<Client> RequireClientAsync(int id, CancellationToken cancellationToken)
     {
-        return await repository.GetClientAsync(id, cancellationToken) ?? throw new BusinessException("El cliente no existe.");
+        return await repository.GetClientAsync(id, cancellationToken) ?? throw new BusinessException("The customer does not exist.");
     }
 
     private async Task<Employee> RequireEmployeeAsync(int id, CancellationToken cancellationToken)
     {
-        return await repository.GetEmployeeAsync(id, cancellationToken) ?? throw new BusinessException("El empleado no existe.");
+        return await repository.GetEmployeeAsync(id, cancellationToken) ?? throw new BusinessException("The staff member does not exist.");
     }
 
     private async Task<User> RequireUserAsync(int id, CancellationToken cancellationToken)
     {
-        return await repository.GetUserAsync(id, cancellationToken) ?? throw new BusinessException("El usuario no existe.");
+        return await repository.GetUserAsync(id, cancellationToken) ?? throw new BusinessException("The user does not exist.");
     }
 
     private async Task<Court> RequireCourtAsync(int id, CancellationToken cancellationToken)
     {
-        return await repository.GetCourtAsync(id, cancellationToken) ?? throw new BusinessException("La cancha no existe.");
+        return await repository.GetCourtAsync(id, cancellationToken) ?? throw new BusinessException("The court does not exist.");
     }
 
     private async Task<Promotion> RequirePromotionAsync(int id, CancellationToken cancellationToken)
     {
-        return await repository.GetPromotionAsync(id, cancellationToken) ?? throw new BusinessException("La promocion no existe.");
+        return await repository.GetPromotionAsync(id, cancellationToken) ?? throw new BusinessException("The promotion does not exist.");
     }
 
     private async Task ValidateDniAsync(string? dni, int? excludingPersonId, CancellationToken cancellationToken)
@@ -403,7 +442,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var normalized = NormalizeDni(dni);
         if (await repository.PersonDniExistsAsync(normalized, excludingPersonId, cancellationToken))
         {
-            throw new BusinessException("Ya existe una persona con ese DNI.");
+            throw new BusinessException("A person with that Customer ID already exists.");
         }
     }
 
@@ -411,8 +450,8 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     {
         return new Person
         {
-            FirstName = RequireText(firstName, "El nombre es obligatorio.", 60),
-            LastName = RequireText(lastName, "El apellido es obligatorio.", 60),
+            FirstName = RequireText(firstName, "First name is required.", 60),
+            LastName = RequireText(lastName, "Last name is required.", 60),
             Dni = NormalizeDni(dni),
             Phone = NormalizePhone(phone),
             Email = NormalizeEmail(email),
@@ -423,8 +462,8 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static void UpdatePerson(Person person, string firstName, string lastName, string? dni, string? phone, string? email)
     {
-        person.FirstName = RequireText(firstName, "El nombre es obligatorio.", 60);
-        person.LastName = RequireText(lastName, "El apellido es obligatorio.", 60);
+        person.FirstName = RequireText(firstName, "First name is required.", 60);
+        person.LastName = RequireText(lastName, "Last name is required.", 60);
         person.Dni = NormalizeDni(dni);
         person.Phone = NormalizePhone(phone);
         person.Email = NormalizeEmail(email);
@@ -432,10 +471,10 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static void ValidateCourt(string name, decimal hourPrice)
     {
-        _ = RequireText(name, "El nombre de la cancha es obligatorio.", 80);
+        _ = RequireText(name, "Court name is required.", 80);
         if (hourPrice <= 0)
         {
-            throw new BusinessException("El precio por hora debe ser mayor a cero.");
+            throw new BusinessException("Hourly price must be greater than zero.");
         }
     }
 
@@ -443,7 +482,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     {
         if (endTime <= startTime)
         {
-            throw new BusinessException("La hora de fin debe ser posterior a la hora de inicio.");
+            throw new BusinessException("End time must be after start time.");
         }
     }
 
@@ -461,26 +500,26 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
             excludingId,
             cancellationToken))
         {
-            throw new BusinessException("El horario se superpone con otro turno activo de la misma cancha.");
+            throw new BusinessException("The time slot overlaps another active slot for the same court.");
         }
     }
 
     private static void ValidatePromotion(string name, decimal discountPercentage, DateOnly dateFrom, DateOnly dateTo)
     {
-        _ = RequireText(name, "El nombre de la promocion es obligatorio.", 80);
+        _ = RequireText(name, "Promotion name is required.", 80);
         if (discountPercentage is <= 0 or > 100)
         {
-            throw new BusinessException("El descuento debe ser mayor a cero y menor o igual a 100.");
+            throw new BusinessException("Discount must be greater than zero and less than or equal to 100.");
         }
 
         if (dateFrom == default || dateTo == default)
         {
-            throw new BusinessException("Las fechas de vigencia son obligatorias.");
+            throw new BusinessException("Promotion dates are required.");
         }
 
         if (dateTo < dateFrom)
         {
-            throw new BusinessException("La fecha hasta debe ser mayor o igual a la fecha desde.");
+            throw new BusinessException("End date must be on or after start date.");
         }
     }
 
@@ -494,7 +533,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var normalized = value.Trim();
         if (maxLength.HasValue && normalized.Length > maxLength.Value)
         {
-            throw new BusinessException($"El campo no puede superar los {maxLength.Value} caracteres.");
+            throw new BusinessException($"The field cannot exceed {maxLength.Value} characters.");
         }
 
         return normalized;
@@ -502,10 +541,10 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static string NormalizeDni(string? value)
     {
-        var normalized = RequireText(value, "El DNI es obligatorio.").Replace(".", string.Empty).Replace(" ", string.Empty);
+        var normalized = RequireText(value, "Customer ID is required.").Replace(".", string.Empty).Replace(" ", string.Empty);
         if (!Regex.IsMatch(normalized, @"^\d{7,8}$"))
         {
-            throw new BusinessException("El DNI debe tener 7 u 8 digitos.");
+            throw new BusinessException("Customer ID must contain 7 to 10 digits.");
         }
 
         return normalized;
@@ -513,10 +552,10 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static string NormalizePhone(string? value)
     {
-        var normalized = RequireText(value, "El telefono es obligatorio.", 40);
+        var normalized = RequireText(value, "Phone is required.", 40);
         if (normalized.Length < 8 || !Regex.IsMatch(normalized, @"^\+?[0-9 ()-]+$") || normalized.Count(char.IsDigit) < 8)
         {
-            throw new BusinessException("El telefono tiene un formato invalido.");
+            throw new BusinessException("Phone has an invalid format.");
         }
 
         return normalized;
@@ -524,10 +563,10 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
 
     private static string NormalizeEmail(string? value)
     {
-        var normalized = RequireText(value, "El email es obligatorio.", 120).ToLowerInvariant();
+        var normalized = RequireText(value, "Email is required.", 120).ToLowerInvariant();
         if (!new EmailAddressAttribute().IsValid(normalized))
         {
-            throw new BusinessException("El email tiene un formato invalido.");
+            throw new BusinessException("Email has an invalid format.");
         }
 
         return normalized;
@@ -537,12 +576,12 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     {
         if (string.IsNullOrWhiteSpace(password))
         {
-            throw new BusinessException("La password es obligatoria.");
+            throw new BusinessException("Password is required.");
         }
 
         if (password.Length is < 8 or > 100)
         {
-            throw new BusinessException("La password debe tener entre 8 y 100 caracteres.");
+            throw new BusinessException("Password must contain between 8 and 100 characters.");
         }
     }
 
@@ -556,7 +595,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var normalized = value.Trim();
         if (maxLength.HasValue && normalized.Length > maxLength.Value)
         {
-            throw new BusinessException($"El campo no puede superar los {maxLength.Value} caracteres.");
+            throw new BusinessException($"The field cannot exceed {maxLength.Value} characters.");
         }
 
         return normalized;
@@ -570,6 +609,23 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     private static ClientDetailDto ToClientDetailDto(Client client)
     {
         return new ClientDetailDto(client.Id, client.Person.FirstName, client.Person.LastName, client.Person.Dni ?? string.Empty, client.Person.Phone ?? string.Empty, client.Person.Email ?? string.Empty, client.Person.IsActive);
+    }
+
+    private static int DayOfWeekSortValue(DayOfWeek dayOfWeek) => dayOfWeek == DayOfWeek.Sunday ? 7 : (int)dayOfWeek;
+
+    private static string ToEnglishDayName(DayOfWeek dayOfWeek)
+    {
+        return dayOfWeek switch
+        {
+            DayOfWeek.Monday => "Monday",
+            DayOfWeek.Tuesday => "Tuesday",
+            DayOfWeek.Wednesday => "Wednesday",
+            DayOfWeek.Thursday => "Thursday",
+            DayOfWeek.Friday => "Friday",
+            DayOfWeek.Saturday => "Saturday",
+            DayOfWeek.Sunday => "Sunday",
+            _ => string.Empty
+        };
     }
 
     private static EmployeeDetailDto ToEmployeeDetailDto(Employee employee)

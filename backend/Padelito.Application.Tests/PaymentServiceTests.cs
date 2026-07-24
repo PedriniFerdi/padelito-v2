@@ -75,7 +75,7 @@ internal sealed class FakePaymentRepository : IPaymentRepository
     public DateTime? LastDateFromUtc { get; private set; }
     public DateTime? LastDateToExclusiveUtc { get; private set; }
     public Reservation Reservation { get; }
-    private readonly PaymentMethod _method = new() { Id = 1, Description = "Efectivo" };
+    private readonly PaymentMethod _method = new() { Id = 1, Description = "Cash" };
 
     public FakePaymentRepository()
     {

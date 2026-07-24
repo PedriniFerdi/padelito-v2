@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -19,7 +19,7 @@ namespace Padelito.Infrastructure.Data.Migrations
                        OR [Phone] IS NULL OR LEN(LTRIM(RTRIM([Phone]))) = 0
                        OR [Email] IS NULL OR LEN(LTRIM(RTRIM([Email]))) = 0)
                 BEGIN
-                    THROW 51000, 'No se puede aplicar la migracion: existen personas sin DNI, telefono o email. Complete esos datos primero.', 1;
+                    THROW 51000, 'No se puede aplicar la migracion: existen personas sin Customer ID, phone o email. Complete esos datos primero.', 1;
                 END
                 """);
 

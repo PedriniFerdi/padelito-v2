@@ -14,17 +14,17 @@ import { reservationSchema, toFieldErrors, type FieldErrors } from '@/lib/valida
 import { todayInClub } from '@/lib/dates'
 
 const statusIds = {
-  Pendiente: 1,
-  Confirmada: 2,
-  Cancelada: 3,
-  Finalizada: 4,
+  Pending: 1,
+  Confirmed: 2,
+  Canceled: 3,
+  Completed: 4,
 } as const
 
-const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })
-const dateFormatter = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const dateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 
 function errorMessage(error: unknown) {
-  return error instanceof ApiRequestError ? error.message : 'No se pudo completar la operación.'
+  return error instanceof ApiRequestError ? error.message : 'The operation could not be completed.'
 }
 
 export function ReservationsPage() {
@@ -61,10 +61,10 @@ export function ReservationsPage() {
     <section className="space-y-5">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-bold text-[#0F766E]">Operación diaria</p>
-          <h3 className="mt-1 text-3xl font-bold tracking-tight text-[#0F172A]">Reservas</h3>
+          <p className="text-sm font-bold text-[#0F766E]">Daily operations</p>
+          <h3 className="mt-1 text-3xl font-bold tracking-tight text-[#0F172A]">Reservations</h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#475569]">
-            Consultá la agenda, asigná turnos disponibles y seguí cada reserva hasta su cierre.
+            Manage the schedule, assign available court slots, and track every reservation through checkout.
           </p>
         </div>
         <button
@@ -73,7 +73,7 @@ export function ReservationsPage() {
           type="button"
         >
           <Plus className="size-4" strokeWidth={2} />
-          Nueva reserva
+          New reservation
         </button>
       </header>
 
@@ -93,23 +93,23 @@ export function ReservationsPage() {
 
       <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
         <div className="border-b border-[#E2E8F0] px-4 pt-4">
-          <div className="flex gap-1" role="tablist" aria-label="Vista de reservas">
-            <Tab active={view === 'active'} label="Vigentes" onClick={() => setView('active')} />
-            <Tab active={view === 'history'} label="Historial" onClick={() => setView('history')} />
+          <div className="flex gap-1" role="tablist" aria-label="Reservation view">
+            <Tab active={view === 'active'} label="Active" onClick={() => setView('active')} />
+            <Tab active={view === 'history'} label="History" onClick={() => setView('history')} />
           </div>
         </div>
 
         <div className="grid gap-3 border-b border-[#E2E8F0] bg-[#F8FAFC] p-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Desde">
+          <Field label="From">
             <input className={inputClass} onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} />
           </Field>
-          <Field label="Hasta">
+          <Field label="To">
             <input className={inputClass} onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} />
           </Field>
-          <Field label="Estado">
+          <Field label="Status">
             <select className={inputClass} onChange={(event) => setStatusId(event.target.value ? Number(event.target.value) : undefined)} value={statusId ?? ''}>
-              <option value="">Todos</option>
-              {(view === 'active' ? ['Pendiente', 'Confirmada'] : ['Cancelada', 'Finalizada']).map((status) => (
+              <option value="">All</option>
+              {(view === 'active' ? ['Pending', 'Confirmed'] : ['Canceled', 'Completed']).map((status) => (
                 <option key={status} value={statusIds[status as ReservationStatus]}>{status}</option>
               ))}
             </select>
@@ -138,7 +138,7 @@ function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; o
   const [clientId, setClientId] = useState('')
   const [turnId, setTurnId] = useState('')
   const [promotionId, setPromotionId] = useState('')
-  const [initialStatusId, setInitialStatusId] = useState(String(statusIds.Pendiente))
+  const [initialStatusId, setInitialStatusId] = useState(String(statusIds.Pending))
   const [formError, setFormError] = useState<string>()
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
@@ -191,59 +191,59 @@ function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; o
     <div className="rounded-2xl border border-[#99F6E4] bg-white shadow-[0_20px_50px_rgba(15,118,110,0.10)]">
       <div className="flex items-start justify-between gap-4 border-b border-[#CCFBF1] px-5 py-4">
         <div>
-          <h4 className="text-lg font-bold text-[#0F172A]">Nueva reserva</h4>
-          <p className="mt-1 text-sm text-[#475569]">El precio definitivo se valida y guarda en el servidor.</p>
+          <h4 className="text-lg font-bold text-[#0F172A]">New reservation</h4>
+          <p className="mt-1 text-sm text-[#475569]">The final price is validated and saved on the server.</p>
         </div>
-        <button aria-label="Cerrar formulario" className="rounded-lg p-2 text-[#475569] transition hover:bg-[#F1F5F9] hover:text-[#0F172A] active:translate-y-px" onClick={onClose} type="button">
+        <button aria-label="Close form" className="rounded-lg p-2 text-[#475569] transition hover:bg-[#F1F5F9] hover:text-[#0F172A] active:translate-y-px" onClick={onClose} type="button">
           <X className="size-5" />
         </button>
       </div>
 
       <form className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_280px]" onSubmit={submit}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field error={fieldErrors.reservationDate} label="Fecha">
+          <Field error={fieldErrors.reservationDate} label="Date">
             <input className={inputClass} min={today} onChange={(event) => setDate(event.target.value)} required type="date" value={date} />
           </Field>
-          <Field error={fieldErrors.clientId} label="Cliente">
+          <Field error={fieldErrors.clientId} label="Customer">
             <select className={inputClass} disabled={clients.isLoading} onChange={(event) => setClientId(event.target.value)} required value={clientId}>
-              <option value="">Seleccionar cliente</option>
+              <option value="">Select customer</option>
               {(clients.data ?? []).filter((client) => client.isActive).map((client) => <option key={client.id} value={client.id}>{client.lastName}, {client.firstName}</option>)}
             </select>
           </Field>
-          <Field error={fieldErrors.availableTurnId} label="Cancha y horario">
+          <Field error={fieldErrors.availableTurnId} label="Court and time">
             <select className={inputClass} disabled={availability.isLoading || availability.isError} onChange={(event) => setTurnId(event.target.value)} required value={turnId}>
-              <option value="">{availability.isLoading ? 'Buscando turnos...' : 'Seleccionar turno'}</option>
+              <option value="">{availability.isLoading ? 'Finding slots...' : 'Select time slot'}</option>
               {(availability.data ?? []).map((turn) => <option key={turn.availableTurnId} value={turn.availableTurnId}>{turn.startTime.slice(0, 5)} - {turn.endTime.slice(0, 5)} | {turn.courtName} ({money.format(turn.basePrice)})</option>)}
             </select>
-            {availability.isSuccess && availability.data.length === 0 ? <p className="text-xs font-medium text-[#B45309]">No hay turnos disponibles para esta fecha.</p> : null}
+            {availability.isSuccess && availability.data.length === 0 ? <p className="text-xs font-medium text-[#B45309]">No time slots are available for this date.</p> : null}
             {availability.isError ? <p className="text-xs font-medium text-[#B91C1C]">{errorMessage(availability.error)}</p> : null}
           </Field>
-          <Field error={fieldErrors.promotionId} label="Promoción">
+          <Field error={fieldErrors.promotionId} label="Promotion">
             <select className={inputClass} onChange={(event) => setPromotionId(event.target.value)} value={promotionId}>
-              <option value="">Sin promoción</option>
+              <option value="">No promotion</option>
               {eligiblePromotions.map((promotion) => <option key={promotion.id} value={promotion.id}>{promotion.name} ({promotion.discountPercentage}%)</option>)}
             </select>
           </Field>
-          <Field error={fieldErrors.reservationStatusId} label="Estado inicial">
+          <Field error={fieldErrors.reservationStatusId} label="Initial status">
             <select className={inputClass} onChange={(event) => setInitialStatusId(event.target.value)} value={initialStatusId}>
-              <option value={statusIds.Pendiente}>Pendiente</option>
-              <option value={statusIds.Confirmada}>Confirmada</option>
+              <option value={statusIds.Pending}>Pending</option>
+              <option value={statusIds.Confirmed}>Confirmed</option>
             </select>
           </Field>
           <div className="flex items-end justify-end gap-2 sm:col-span-2">
-            <button className={secondaryButtonClass} onClick={onClose} type="button">Cancelar</button>
-            <button className={primaryButtonClass} disabled={create.isPending || !clientId || !turnId} type="submit">{create.isPending ? 'Guardando...' : 'Crear reserva'}</button>
+            <button className={secondaryButtonClass} onClick={onClose} type="button">Cancel</button>
+            <button className={primaryButtonClass} disabled={create.isPending || !clientId || !turnId} type="submit">{create.isPending ? 'Saving...' : 'Create reservation'}</button>
           </div>
           {formError ? <div className="sm:col-span-2"><ErrorBanner message={formError} /></div> : null}
         </div>
 
         <aside className="rounded-xl bg-[#F0FDFA] p-4 ring-1 ring-[#CCFBF1]">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#0F766E]">Resumen de precio</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-[#0F766E]">Price summary</p>
           <dl className="mt-4 space-y-3 text-sm">
-            <PriceRow label="Precio base" value={selectedTurn ? money.format(selectedTurn.basePrice) : '-'} />
-            <PriceRow label="Descuento" value={selectedPromotion ? `${selectedPromotion.discountPercentage}%` : 'Sin descuento'} />
+            <PriceRow label="Base price" value={selectedTurn ? money.format(selectedTurn.basePrice) : '-'} />
+            <PriceRow label="Discount" value={selectedPromotion ? `${selectedPromotion.discountPercentage}%` : 'No discount'} />
             <div className="border-t border-[#99F6E4] pt-3">
-              <PriceRow emphasis label="Total estimado" value={selectedTurn ? money.format(finalPrice) : '-'} />
+              <PriceRow emphasis label="Estimated total" value={selectedTurn ? money.format(finalPrice) : '-'} />
             </div>
           </dl>
         </aside>
@@ -257,7 +257,7 @@ function ReservationsTable({ items, isChanging, onChangeStatus }: { items: Reser
     <div className="overflow-x-auto">
       <table className="w-full min-w-[920px] text-left text-sm">
         <thead className="bg-white text-xs font-bold uppercase tracking-wide text-[#64748B]">
-          <tr><th className="px-4 py-3">Fecha y turno</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Cancha</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">Promoción</th><th className="px-4 py-3 text-right">Precio</th><th className="px-4 py-3 text-right">Acciones</th></tr>
+          <tr><th className="px-4 py-3">Date and time</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Court</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Promotion</th><th className="px-4 py-3 text-right">Price</th><th className="px-4 py-3 text-right">Actions</th></tr>
         </thead>
         <tbody className="divide-y divide-[#E2E8F0]">
           {items.map((item) => (
@@ -266,7 +266,7 @@ function ReservationsTable({ items, isChanging, onChangeStatus }: { items: Reser
               <td className="px-4 py-4 font-semibold text-[#334155]">{item.clientName}</td>
               <td className="px-4 py-4 text-[#475569]">{item.courtName}</td>
               <td className="px-4 py-4"><StatusBadge status={item.status} /></td>
-              <td className="px-4 py-4 text-[#475569]">{item.promotionName ?? 'Sin promoción'}</td>
+              <td className="px-4 py-4 text-[#475569]">{item.promotionName ?? 'No promotion'}</td>
               <td className="px-4 py-4 text-right"><p className="font-bold text-[#0F172A]">{money.format(item.finalPrice)}</p>{item.finalPrice !== item.basePrice ? <p className="mt-1 text-xs text-[#64748B] line-through">{money.format(item.basePrice)}</p> : null}</td>
               <td className="px-4 py-4"><StatusActions disabled={isChanging} item={item} onChange={onChangeStatus} /></td>
             </tr>
@@ -279,10 +279,10 @@ function ReservationsTable({ items, isChanging, onChangeStatus }: { items: Reser
 
 function StatusActions({ item, disabled, onChange }: { item: Reservation; disabled: boolean; onChange: (id: number, statusId: number) => void }) {
   return <div className="flex justify-end gap-2">
-    {item.status !== 'Cancelada' && <Link className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#C4B5FD] px-2.5 py-2 text-xs font-bold text-[#6D28D9] hover:bg-[#F5F3FF]" to={`/payments?reservationId=${item.id}`}><CreditCard className="size-3.5"/>Cobrar</Link>}
-    {item.status === 'Pendiente' && <ActionButton icon={Check} label="Confirmar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Confirmada)} />}
-    {item.status === 'Confirmada' && <ActionButton icon={Flag} label="Finalizar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Finalizada)} />}
-    {(item.status === 'Pendiente' || item.status === 'Confirmada') && <ActionButton destructive icon={CircleX} label="Cancelar" disabled={disabled} onClick={() => onChange(item.id, statusIds.Cancelada)} />}
+    {item.status !== 'Canceled' && <Link className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#C4B5FD] px-2.5 py-2 text-xs font-bold text-[#6D28D9] hover:bg-[#F5F3FF]" to={`/payments?reservationId=${item.id}`}><CreditCard className="size-3.5"/>Collect</Link>}
+    {item.status === 'Pending' && <ActionButton icon={Check} label="Confirm" disabled={disabled} onClick={() => onChange(item.id, statusIds.Confirmed)} />}
+    {item.status === 'Confirmed' && <ActionButton icon={Flag} label="Complete" disabled={disabled} onClick={() => onChange(item.id, statusIds.Completed)} />}
+    {(item.status === 'Pending' || item.status === 'Confirmed') && <ActionButton destructive icon={CircleX} label="Cancel" disabled={disabled} onClick={() => onChange(item.id, statusIds.Canceled)} />}
   </div>
 }
 
@@ -292,10 +292,10 @@ function ActionButton({ icon: Icon, label, onClick, disabled, destructive = fals
 
 function StatusBadge({ status }: { status: ReservationStatus }) {
   const styles: Record<ReservationStatus, string> = {
-    Pendiente: 'bg-[#FFF7ED] text-[#9A3412] ring-[#FED7AA]',
-    Confirmada: 'bg-[#ECFDF5] text-[#047857] ring-[#A7F3D0]',
-    Cancelada: 'bg-[#FEF2F2] text-[#B91C1C] ring-[#FECACA]',
-    Finalizada: 'bg-[#F1F5F9] text-[#475569] ring-[#CBD5E1]',
+    Pending: 'bg-[#FFF7ED] text-[#9A3412] ring-[#FED7AA]',
+    Confirmed: 'bg-[#ECFDF5] text-[#047857] ring-[#A7F3D0]',
+    Canceled: 'bg-[#FEF2F2] text-[#B91C1C] ring-[#FECACA]',
+    Completed: 'bg-[#F1F5F9] text-[#475569] ring-[#CBD5E1]',
   }
   return <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-bold ring-1 ring-inset ${styles[status]}`}>{status}</span>
 }
@@ -317,11 +317,11 @@ function ErrorBanner({ message }: { message: string }) {
 }
 
 function ReservationSkeleton() {
-  return <div className="space-y-3 p-4" aria-label="Cargando reservas">{[1, 2, 3].map((item) => <div className="h-16 animate-pulse rounded-xl bg-[#F1F5F9]" key={item} />)}</div>
+  return <div className="space-y-3 p-4" aria-label="Loading reservations">{[1, 2, 3].map((item) => <div className="h-16 animate-pulse rounded-xl bg-[#F1F5F9]" key={item} />)}</div>
 }
 
 function EmptyState({ view, onCreate }: { view: ReservationView; onCreate: () => void }) {
-  return <div className="grid place-items-center px-5 py-14 text-center"><div className="grid size-12 place-items-center rounded-xl bg-[#F0FDFA] text-[#0F766E]"><CalendarCheck className="size-6" /></div><h4 className="mt-4 text-lg font-bold text-[#0F172A]">{view === 'active' ? 'No hay reservas vigentes' : 'El historial está vacío'}</h4><p className="mt-2 max-w-md text-sm leading-6 text-[#64748B]">{view === 'active' ? 'Creá una reserva para empezar a organizar la agenda del club.' : 'Las reservas canceladas o finalizadas aparecerán acá.'}</p>{view === 'active' ? <button className={`${secondaryButtonClass} mt-4`} onClick={onCreate} type="button">Crear reserva</button> : null}</div>
+  return <div className="grid place-items-center px-5 py-14 text-center"><div className="grid size-12 place-items-center rounded-xl bg-[#F0FDFA] text-[#0F766E]"><CalendarCheck className="size-6" /></div><h4 className="mt-4 text-lg font-bold text-[#0F172A]">{view === 'active' ? 'No active reservations' : 'History is empty'}</h4><p className="mt-2 max-w-md text-sm leading-6 text-[#64748B]">{view === 'active' ? 'Create a reservation to start organizing the club schedule.' : 'Canceled and completed reservations will appear here.'}</p>{view === 'active' ? <button className={`${secondaryButtonClass} mt-4`} onClick={onCreate} type="button">Create reservation</button> : null}</div>
 }
 
 function calculatePreview(turn?: ReservationAvailability, promotion?: Promotion) {

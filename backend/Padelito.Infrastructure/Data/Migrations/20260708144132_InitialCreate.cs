@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -366,8 +366,8 @@ namespace Padelito.Infrastructure.Data.Migrations
                 columns: new[] { "Id", "Description" },
                 values: new object[,]
                 {
-                    { 1, "Cemento" },
-                    { 2, "Sintetico" },
+                    { 1, "Concrete" },
+                    { 2, "Synthetic Turf" },
                     { 3, "Indoor" },
                     { 4, "Premium" }
                 });
@@ -377,11 +377,11 @@ namespace Padelito.Infrastructure.Data.Migrations
                 columns: new[] { "Id", "Description" },
                 values: new object[,]
                 {
-                    { 1, "Efectivo" },
-                    { 2, "Tarjeta de debito" },
-                    { 3, "Tarjeta de credito" },
-                    { 4, "Transferencia" },
-                    { 5, "Mercado Pago" }
+                    { 1, "Cash" },
+                    { 2, "Debit Card" },
+                    { 3, "Credit Card" },
+                    { 4, "Bank Transfer" },
+                    { 5, "Venmo" }
                 });
 
             migrationBuilder.InsertData(
@@ -394,10 +394,10 @@ namespace Padelito.Infrastructure.Data.Migrations
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Pendiente" },
-                    { 2, "Confirmada" },
-                    { 3, "Cancelada" },
-                    { 4, "Finalizada" }
+                    { 1, "Pending" },
+                    { 2, "Confirmed" },
+                    { 3, "Canceled" },
+                    { 4, "Completed" }
                 });
 
             migrationBuilder.InsertData(
@@ -406,8 +406,8 @@ namespace Padelito.Infrastructure.Data.Migrations
                 values: new object[,]
                 {
                     { 1, "Administrador" },
-                    { 2, "Recepcion" },
-                    { 3, "Empleado" }
+                    { 2, "Reception" },
+                    { 3, "Staff" }
                 });
 
             migrationBuilder.InsertData(

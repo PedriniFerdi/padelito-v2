@@ -9,11 +9,11 @@ public sealed record PaymentFilterDto(
     int? ReservationId = null);
 
 public sealed record PaymentCreateDto(
-    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar una reserva.")] int ReservationId,
-    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un metodo de pago.")] int PaymentMethodId,
-    [Range(0.01, 99999999.99, ErrorMessage = "El monto debe ser mayor a cero.")] decimal Amount,
+    [Range(1, int.MaxValue, ErrorMessage = "Select a reservation.")] int ReservationId,
+    [Range(1, int.MaxValue, ErrorMessage = "Select a payment method.")] int PaymentMethodId,
+    [Range(0.01, 99999999.99, ErrorMessage = "Amount must be greater than zero.")] decimal Amount,
     DateTime PaymentDate,
-    [StringLength(255, ErrorMessage = "La nota no puede superar los 255 caracteres.")] string? Note);
+    [StringLength(255, ErrorMessage = "Note cannot exceed 255 characters.")] string? Note);
 
 public sealed record PaymentListDto(
     int Id,

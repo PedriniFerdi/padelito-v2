@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   BarChart3,
   CalendarDays,
+  ClipboardList,
   CreditCard,
   FileText,
   History,
@@ -26,25 +27,26 @@ type NavItem = {
   roles: Role[]
 }
 
-const allRoles: Role[] = ['Administrador', 'Recepcion', 'Empleado']
+const allRoles: Role[] = ['Admin', 'Reception', 'Staff']
 
 const navGroups: NavItem[][] = [
   [
+    { label: 'Operations', path: '/operations', icon: ClipboardList, roles: ['Admin', 'Reception'] },
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: allRoles },
-    { label: 'Clientes', path: '/clients', icon: Users, roles: ['Administrador', 'Recepcion'] },
-    { label: 'Empleados', path: '/employees', icon: UserSquare, roles: ['Administrador'] },
-    { label: 'Usuarios', path: '/users', icon: Shield, roles: ['Administrador'] },
+    { label: 'Customers', path: '/clients', icon: Users, roles: ['Admin', 'Reception'] },
+    { label: 'Staff', path: '/employees', icon: UserSquare, roles: ['Admin'] },
+    { label: 'Users', path: '/users', icon: Shield, roles: ['Admin'] },
   ],
   [
-    { label: 'Canchas', path: '/courts', icon: Settings, roles: ['Administrador'] },
-    { label: 'Turnos', path: '/turns', icon: CalendarDays, roles: ['Administrador'] },
+    { label: 'Courts', path: '/courts', icon: Settings, roles: ['Admin'] },
+    { label: 'Time Slots', path: '/turns', icon: CalendarDays, roles: ['Admin'] },
   ],
   [
-    { label: 'Promociones', path: '/promotions', icon: Percent, roles: ['Administrador'] },
-    { label: 'Reservas', path: '/reservations', icon: BarChart3, roles: ['Administrador', 'Recepcion'] },
-    { label: 'Pagos', path: '/payments', icon: CreditCard, roles: ['Administrador', 'Recepcion'] },
-    { label: 'Reportes', path: '/reports', icon: FileText, roles: ['Administrador', 'Recepcion'] },
-    { label: 'Auditoría', path: '/audit', icon: History, roles: ['Administrador'] },
+    { label: 'Promotions', path: '/promotions', icon: Percent, roles: ['Admin'] },
+    { label: 'Reservations', path: '/reservations', icon: BarChart3, roles: ['Admin', 'Reception'] },
+    { label: 'Payments', path: '/payments', icon: CreditCard, roles: ['Admin', 'Reception'] },
+    { label: 'Reports', path: '/reports', icon: FileText, roles: ['Admin', 'Reception'] },
+    { label: 'Audit Trail', path: '/audit', icon: History, roles: ['Admin'] },
   ],
 ]
 
@@ -59,14 +61,14 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 export function AppLayout() {
   const { logout, user } = useAuth()
   const [navigationSearch, setNavigationSearch] = useState('')
-  const normalizedSearch = navigationSearch.trim().toLocaleLowerCase('es')
+  const normalizedSearch = navigationSearch.trim().toLocaleLowerCase('en-US')
   const visibleGroups = navGroups
     .map((group) =>
       group.filter(
         (item) =>
           user &&
           item.roles.includes(user.role) &&
-          (!normalizedSearch || item.label.toLocaleLowerCase('es').includes(normalizedSearch)),
+          (!normalizedSearch || item.label.toLocaleLowerCase('en-US').includes(normalizedSearch)),
       ),
     )
     .filter((group) => group.length > 0)
@@ -79,11 +81,11 @@ export function AppLayout() {
         <div className="flex h-[62px] shrink-0 items-center border-b border-white/[0.08] px-4">
           <img alt="Padelito" className="size-8" src="/assets/brand/logo-mark.svg" />
           <h1 className="font-display ml-1.5 whitespace-nowrap text-[19px] font-extrabold tracking-[-0.035em] text-[#f4f6f8]">
-            Padelito <span className="text-sm text-[#4edea3]">v2</span>
+            Padelito
           </h1>
         </div>
 
-        <nav aria-label="Navegación principal" className="min-h-0 flex-1 overflow-y-auto py-3">
+        <nav aria-label="Main navigation" className="min-h-0 flex-1 overflow-y-auto py-3">
           {visibleGroups.map((group, groupIndex) => (
             <div
               className={groupIndex === 1 ? 'mt-9' : groupIndex === 2 ? 'mt-2 border-t border-white/[0.12] pt-2' : ''}
@@ -98,7 +100,7 @@ export function AppLayout() {
             </div>
           ))}
           {visibleItems.length === 0 ? (
-            <p className="px-4 py-3 text-xs font-medium leading-5 text-[#9aa2ad]">No hay secciones que coincidan.</p>
+            <p className="px-4 py-3 text-xs font-medium leading-5 text-[#9aa2ad]">No matching sections.</p>
           ) : null}
         </nav>
       </aside>
@@ -108,7 +110,7 @@ export function AppLayout() {
 
         <header className="sticky top-0 z-20 flex h-[62px] items-center justify-between gap-4 border-b border-white/[0.09] bg-[#0b1326]/90 px-3 backdrop-blur-2xl">
           <label className="relative block w-full max-w-[350px]" htmlFor="navigation-search">
-            <span className="sr-only">Buscar sección</span>
+            <span className="sr-only">Search section</span>
             <Search
               aria-hidden="true"
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8c93a1]"
@@ -119,7 +121,7 @@ export function AppLayout() {
               className="h-[34px] w-full rounded-lg border border-[#3e4943] bg-[#171f33] pl-9 pr-3 text-sm font-medium text-[#dae2fd] outline-none transition-[border-color,box-shadow] placeholder:text-[#88948b] focus:border-[#7ad9ad] focus:ring-2 focus:ring-[#7ad9ad]/15"
               id="navigation-search"
               onChange={(event) => setNavigationSearch(event.target.value)}
-              placeholder="Buscar"
+              placeholder="Search"
               type="search"
               value={navigationSearch}
             />
@@ -130,7 +132,7 @@ export function AppLayout() {
               <div className="relative grid size-9 shrink-0 place-items-center rounded-full bg-[#2d3449] text-sm font-bold text-white shadow-[0_7px_20px_rgba(6,14,32,0.35)]">
                 {userInitial}
                 <span
-                  aria-label="Usuario conectado"
+                  aria-label="Signed-in user"
                   className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-[#171a22] bg-[#4edea3]"
                   role="status"
                 />
@@ -143,7 +145,7 @@ export function AppLayout() {
             <button
               className="grid h-full w-11 place-items-center text-[#9da5b0] transition-colors hover:bg-white/[0.045] hover:text-[#6fe0b2] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#53d6a2]"
               onClick={logout}
-              title="Cerrar sesión"
+              title="Sign out"
               type="button"
             >
               <LogOut aria-hidden="true" className="size-5" strokeWidth={1.8} />

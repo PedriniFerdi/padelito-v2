@@ -13,6 +13,7 @@ public interface IReservationRepository
         CancellationToken cancellationToken);
 
     Task<Reservation?> GetReservationAsync(int id, int clubId, bool trackChanges, CancellationToken cancellationToken);
+    Task<List<Reservation>> GetOperationsBoardReservationsAsync(int clubId, DateOnly date, CancellationToken cancellationToken);
     Task<List<AvailableTurn>> GetAvailabilityAsync(int clubId, DateOnly date, CancellationToken cancellationToken);
     Task<Client?> GetClientAsync(int id, CancellationToken cancellationToken);
     Task<Employee?> GetEmployeeAsync(int id, CancellationToken cancellationToken);

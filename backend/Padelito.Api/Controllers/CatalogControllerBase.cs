@@ -13,7 +13,7 @@ public abstract class CatalogControllerBase : ControllerBase
             var claimValue = User.FindFirstValue("ClubId");
             return int.TryParse(claimValue, out var clubId)
                 ? clubId
-                : throw new UnauthorizedAccessException("El token no contiene un club válido.");
+                : throw new UnauthorizedAccessException("The token does not contain a valid club.");
         }
     }
 

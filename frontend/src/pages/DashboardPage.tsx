@@ -16,8 +16,8 @@ import {
 import { dashboardApi, type RevenueIntelligenceFilters } from '@/api/dashboard.api'
 import type { DashboardRevenueIntelligence } from '@/types/api'
 
-const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })
-const percent = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const percent = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
 const inputClass =
   'h-9 rounded-lg border border-[#3e4943] bg-[#171f33] px-3 text-sm font-semibold text-[#dae2fd] outline-none transition focus:border-[#7ad9ad] focus:ring-2 focus:ring-[#7ad9ad]/15'
 
@@ -46,16 +46,16 @@ export function DashboardPage() {
   const data = summaryQuery.data!
   const intelligence = intelligenceQuery.data!
   const cards = [
-    ['Clientes activos', data.activeClients, UserRound],
-    ['Canchas activas', data.activeCourts, MapPin],
-    ['Reservas de hoy', data.reservationsToday, CalendarDays],
-    ['Ingresos de hoy', money.format(data.incomeToday), Banknote],
+    ['Active customers', data.activeClients, UserRound],
+    ['Active courts', data.activeCourts, MapPin],
+    ['Today reservations', data.reservationsToday, CalendarDays],
+    ['Today revenue', money.format(data.incomeToday), Banknote],
   ] as const
   const kpis = [
-    ['Ingresos cobrados', money.format(intelligence.summary.totalRevenue), TrendingUp, 'text-[#6fe0b2]', 'bg-[#003824]'],
-    ['Saldo pendiente', money.format(intelligence.summary.pendingBalance), AlertTriangle, 'text-[#ffd166]', 'bg-[#3c2f12]'],
-    ['Ocupacion media', `${percent.format(intelligence.summary.averageOccupancyRate)}%`, MapPin, 'text-[#9cc9ff]', 'bg-[#18314f]'],
-    ['Cancelaciones', `${percent.format(intelligence.summary.cancellationRate)}%`, Percent, 'text-[#ffb4ab]', 'bg-[#4a1d20]'],
+    ['Collected revenue', money.format(intelligence.summary.totalRevenue), TrendingUp, 'text-[#6fe0b2]', 'bg-[#003824]'],
+    ['Outstanding balance', money.format(intelligence.summary.pendingBalance), AlertTriangle, 'text-[#ffd166]', 'bg-[#3c2f12]'],
+    ['Average occupancy', `${percent.format(intelligence.summary.averageOccupancyRate)}%`, MapPin, 'text-[#9cc9ff]', 'bg-[#18314f]'],
+    ['Cancellations', `${percent.format(intelligence.summary.cancellationRate)}%`, Percent, 'text-[#ffb4ab]', 'bg-[#4a1d20]'],
   ] as const
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
@@ -69,13 +69,13 @@ export function DashboardPage() {
         <div>
           <h2 className="font-display text-[23px] font-bold leading-7 tracking-[-0.02em] text-[#f2f4f6]">Dashboard</h2>
           <p className="mt-0.5 text-sm font-medium text-[#9fa6b1]">
-            Resumen del {formatDate(data.operationalDate)} e inteligencia de ingresos del {formatDate(intelligence.dateFrom)} al{' '}
+            Summary for {formatDate(data.operationalDate)} and revenue intelligence from {formatDate(intelligence.dateFrom)} to{' '}
             {formatDate(intelligence.dateTo)}.
           </p>
         </div>
         <form className="flex flex-wrap items-end gap-2" onSubmit={applyFilters}>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-wide text-[#9fa6b1]">
-            Desde
+            From
             <input
               className={inputClass}
               onChange={(event) => setDraft({ ...draft, dateFrom: event.target.value || undefined })}
@@ -83,7 +83,7 @@ export function DashboardPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-wide text-[#9fa6b1]">
-            Hasta
+            To
             <input
               className={inputClass}
               onChange={(event) => setDraft({ ...draft, dateTo: event.target.value || undefined })}
@@ -95,22 +95,22 @@ export function DashboardPage() {
             type="submit"
           >
             <Clock3 aria-hidden="true" className="size-4" />
-            Aplicar
+            Apply
           </button>
         </form>
       </header>
 
-      <section aria-label="Resumen operativo" className="grid gap-x-6 gap-y-[30px] px-3 md:grid-cols-2">
+      <section aria-label="Operations summary" className="grid gap-x-6 gap-y-[30px] px-3 md:grid-cols-2">
         {cards.map(([label, value, Icon]) => (
           <MetricCard Icon={Icon} key={label} label={label} value={value} />
         ))}
       </section>
 
-      <section aria-label="Inteligencia de ingresos" className="space-y-5">
+      <section aria-label="Padelytics" className="space-y-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-black text-[#f2f4f6]">Inteligencia de ingresos</h3>
-            <p className="text-sm font-medium text-[#9fa6b1]">Ocupacion, demanda, saldos y promociones para decidir mejor.</p>
+            <h3 className="text-lg font-black text-[#f2f4f6]">Padelytics</h3>
+            <p className="text-sm font-medium text-[#9fa6b1]">Occupancy, demand, balances, and promotions for better decisions.</p>
           </div>
         </div>
 
@@ -161,18 +161,18 @@ function MetricCard({ Icon, label, value }: { Icon: LucideIcon; label: string; v
 function CourtRanking({ intelligence }: { intelligence: DashboardRevenueIntelligence }) {
   return (
     <section className="overflow-hidden rounded-lg border border-[#3e4943] bg-[#171f33]/90">
-      <h3 className="px-4 pt-4 text-sm font-bold text-[#f1f4f5]">Revenue por cancha</h3>
+      <h3 className="px-4 pt-4 text-sm font-bold text-[#f1f4f5]">Revenue by court</h3>
       {intelligence.courts.length === 0 ? (
-        <EmptyState text="No hay canchas activas para analizar." />
+        <EmptyState text="No active courts are available for analysis." />
       ) : (
         <div className="mt-2 overflow-x-auto">
           <table className="w-full min-w-[640px] table-fixed text-left text-sm">
             <thead className="text-[#8f96a2]">
               <tr>
-                <th className="w-[30%] px-4 py-2 font-medium">Cancha</th>
-                <th className="w-[18%] px-4 py-2 font-medium">Ocupacion</th>
-                <th className="w-[30%] px-4 py-2 font-medium">Turnos</th>
-                <th className="w-[22%] px-4 py-2 text-right font-medium">Ingresos</th>
+                <th className="w-[30%] px-4 py-2 font-medium">Court</th>
+                <th className="w-[18%] px-4 py-2 font-medium">Occupancy</th>
+                <th className="w-[30%] px-4 py-2 font-medium">Time slots</th>
+                <th className="w-[22%] px-4 py-2 text-right font-medium">Revenue</th>
               </tr>
             </thead>
             <tbody>
@@ -185,7 +185,7 @@ function CourtRanking({ intelligence }: { intelligence: DashboardRevenueIntellig
                       <div className="h-full rounded-full bg-[#6fe0b2]" style={{ width: `${Math.min(100, court.occupancyRate)}%` }} />
                     </div>
                     <span className="mt-1 block text-xs text-[#9fa6b1]">
-                      {court.reservedSlots}/{court.availableSlots} turnos
+                      {court.reservedSlots}/{court.availableSlots} slots
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-black">{money.format(court.revenue)}</td>
@@ -204,23 +204,25 @@ function PromotionCard({ intelligence }: { intelligence: DashboardRevenueIntelli
   return (
     <section className="rounded-lg border border-[#3e4943] bg-[#171f33]/90 p-4">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-bold text-[#f1f4f5]">Mejor promocion</h3>
+        <h3 className="text-sm font-bold text-[#f1f4f5]">Best promotion</h3>
         <span className="grid size-9 place-items-center rounded-lg bg-[#3b2b57] text-[#d8b4fe]">
           <Flame aria-hidden="true" className="size-5" />
         </span>
       </div>
       {!promotion ? (
-        <EmptyState text="Todavia no hay reservas con promocion en el periodo." />
+        <EmptyState text="No reservations with promotions in this period yet." />
       ) : (
         <div className="mt-4 space-y-4">
           <div>
             <p className="text-2xl font-black text-white">{promotion.promotionName}</p>
-            <p className="mt-1 text-sm font-medium text-[#9fa6b1]">{promotion.reservationCount} reservas asociadas</p>
+            <p className="mt-1 text-sm font-medium text-[#9fa6b1]">
+              {promotion.reservationCount} linked {promotion.reservationCount === 1 ? 'reservation' : 'reservations'}
+            </p>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <MiniStat label="Cobrado" value={money.format(promotion.collectedRevenue)} />
-            <MiniStat label="Bruto" value={money.format(promotion.grossRevenue)} />
-            <MiniStat label="Descuento" value={money.format(promotion.discountTotal)} />
+            <MiniStat label="Collected" value={money.format(promotion.collectedRevenue)} />
+            <MiniStat label="Gross" value={money.format(promotion.grossRevenue)} />
+            <MiniStat label="Discount" value={money.format(promotion.discountTotal)} />
           </div>
         </div>
       )}
@@ -235,9 +237,9 @@ function DemandHeatmap({ intelligence }: { intelligence: DashboardRevenueIntelli
     .map((day) => intelligence.demand.find((item) => item.dayOfWeek === day)!)
   return (
     <section className="rounded-lg border border-[#3e4943] bg-[#171f33]/90 p-4">
-      <h3 className="text-sm font-bold text-[#f1f4f5]">Demanda por dia y hora</h3>
+      <h3 className="text-sm font-bold text-[#f1f4f5]">Demand by day and hour</h3>
       {hours.length === 0 ? (
-        <EmptyState text="No hay reservas activas para armar la matriz de demanda." />
+        <EmptyState text="No active reservations are available for the demand matrix." />
       ) : (
         <div className="mt-4 overflow-x-auto">
           <div className="grid min-w-[620px] gap-2" style={{ gridTemplateColumns: `88px repeat(${hours.length}, minmax(64px, 1fr))` }}>
@@ -277,7 +279,7 @@ function HeatmapRow({
             className="grid h-11 place-items-center rounded-lg border border-white/[0.06] text-xs font-black text-white"
             key={`${day}-${hour}`}
             style={{ backgroundColor: `rgba(111, 224, 178, ${cell ? intensity : 0.05})` }}
-            title={cell ? `${cell.reservationCount} reservas, ${percent.format(cell.occupancyRate)}% ocupacion` : 'Sin reservas'}
+            title={cell ? `${cell.reservationCount} ${cell.reservationCount === 1 ? 'reservation' : 'reservations'}, ${percent.format(cell.occupancyRate)}% occupancy` : 'No reservations'}
           >
             {cell?.reservationCount ?? 0}
           </div>
@@ -290,8 +292,8 @@ function HeatmapRow({
 function DemandWindows({ intelligence }: { intelligence: DashboardRevenueIntelligence }) {
   return (
     <section className="grid gap-4">
-      <WindowList title="Picos de demanda" windows={intelligence.peakDemand} />
-      <WindowList title="Oportunidad off-peak" windows={intelligence.offPeakDemand} />
+      <WindowList title="Peak demand" windows={intelligence.peakDemand} />
+      <WindowList title="Off-peak opportunity" windows={intelligence.offPeakDemand} />
     </section>
   )
 }
@@ -301,7 +303,7 @@ function WindowList({ title, windows }: { title: string; windows: DashboardReven
     <div className="rounded-lg border border-[#3e4943] bg-[#171f33]/90 p-4">
       <h3 className="text-sm font-bold text-[#f1f4f5]">{title}</h3>
       {windows.length === 0 ? (
-        <EmptyState text="Sin datos suficientes." />
+        <EmptyState text="Not enough data yet." />
       ) : (
         <div className="mt-3 space-y-2">
           {windows.map((window) => (
@@ -310,7 +312,9 @@ function WindowList({ title, windows }: { title: string; windows: DashboardReven
                 <p className="text-sm font-bold text-white">
                   {window.dayName} {window.hour}:00
                 </p>
-                <p className="text-xs font-medium text-[#9fa6b1]">{window.reservationCount} reservas</p>
+                <p className="text-xs font-medium text-[#9fa6b1]">
+                  {window.reservationCount} {window.reservationCount === 1 ? 'reservation' : 'reservations'}
+                </p>
               </div>
               <p className="text-sm font-black text-[#6fe0b2]">{percent.format(window.occupancyRate)}%</p>
             </div>
@@ -324,12 +328,12 @@ function WindowList({ title, windows }: { title: string; windows: DashboardReven
 function LatestReservations({ data }: { data: Awaited<ReturnType<typeof dashboardApi.summary>> }) {
   return (
     <section className="overflow-hidden rounded-lg border border-[#3e4943] bg-[#171f33]/90 shadow-[0_18px_45px_rgba(6,14,32,0.22)] backdrop-blur-xl">
-      <h3 className="px-3 pt-3 text-sm font-semibold text-[#f1f4f5]">Ultimas reservas de hoy</h3>
+      <h3 className="px-3 pt-3 text-sm font-semibold text-[#f1f4f5]">Latest reservations today</h3>
       {data.latestReservations.length === 0 ? (
         <div className="grid min-h-44 place-items-center px-6 text-center">
           <div>
             <CalendarDays aria-hidden="true" className="mx-auto size-7 text-[#4edea3]" strokeWidth={1.7} />
-            <p className="mt-3 text-sm font-semibold text-[#d9dee2]">Todavia no hay reservas para hoy.</p>
+            <p className="mt-3 text-sm font-semibold text-[#d9dee2]">No reservations yet today.</p>
           </div>
         </div>
       ) : (
@@ -337,10 +341,10 @@ function LatestReservations({ data }: { data: Awaited<ReturnType<typeof dashboar
           <table className="mt-1 w-full min-w-[680px] table-fixed text-left text-sm">
             <thead className="text-[#8f96a2]">
               <tr>
-                <th className="w-1/4 px-3 py-2 font-medium">Tiempo</th>
-                <th className="w-1/4 px-3 py-2 font-medium">Canchas</th>
-                <th className="w-1/4 px-3 py-2 font-medium">Cliente</th>
-                <th className="w-1/4 px-3 py-2 font-medium">Estado</th>
+                <th className="w-1/4 px-3 py-2 font-medium">Time</th>
+                <th className="w-1/4 px-3 py-2 font-medium">Courts</th>
+                <th className="w-1/4 px-3 py-2 font-medium">Customer</th>
+                <th className="w-1/4 px-3 py-2 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -375,7 +379,7 @@ function EmptyState({ text }: { text: string }) {
 
 function DashboardSkeleton() {
   return (
-    <div aria-label="Cargando dashboard" aria-live="polite">
+    <div aria-label="Loading dashboard" aria-live="polite">
       <div className="h-7 w-36 animate-pulse rounded-md bg-white/[0.08]" />
       <div className="mt-2 h-4 w-80 max-w-full animate-pulse rounded bg-white/[0.06]" />
       <div className="mt-7 grid gap-x-6 gap-y-[30px] px-3 md:grid-cols-2">
@@ -394,5 +398,5 @@ function DashboardSkeleton() {
 }
 
 function formatDate(value: string) {
-  return new Date(`${value}T12:00:00`).toLocaleDateString('es-AR')
+  return new Date(`${value}T12:00:00`).toLocaleDateString('en-US')
 }

@@ -4,10 +4,10 @@ namespace Padelito.Application.DTOs.Auth;
 
 public sealed class LoginRequestDto
 {
-    [Required(ErrorMessage = "El usuario es obligatorio.")]
-    [StringLength(50, ErrorMessage = "El usuario no puede superar los 50 caracteres.")]
+    [Required(ErrorMessage = "Username is required.")]
+    [StringLength(50, ErrorMessage = "Username cannot exceed 50 characters.")]
     public required string Username { get; init; }
 
-    [Required(ErrorMessage = "La contraseña es obligatoria.")]
+    [Required(ErrorMessage = "Password is required.")]
     public required string Password { get; init; }
 }

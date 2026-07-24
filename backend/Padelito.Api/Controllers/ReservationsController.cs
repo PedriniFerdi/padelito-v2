@@ -19,6 +19,10 @@ public sealed class ReservationsController(IReservationService reservationServic
     public Task<ActionResult<IReadOnlyList<ReservationAvailabilityDto>>> GetAvailability([FromQuery] DateOnly date, CancellationToken cancellationToken) =>
         HandleAsync(() => reservationService.GetAvailabilityAsync(CurrentClubId, date, cancellationToken));
 
+    [HttpGet("operations-board")]
+    public Task<ActionResult<OperationsBoardDto>> GetOperationsBoard(CancellationToken cancellationToken) =>
+        HandleAsync(() => reservationService.GetOperationsBoardAsync(CurrentClubId, cancellationToken));
+
     [HttpGet("{id:int}")]
     public Task<ActionResult<ReservationDetailDto>> GetById(int id, CancellationToken cancellationToken) =>
         HandleAsync(() => reservationService.GetReservationAsync(id, CurrentClubId, cancellationToken));

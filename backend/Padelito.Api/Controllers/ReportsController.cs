@@ -20,7 +20,7 @@ public sealed class ReportsController(IReportService reportService) : CatalogCon
         try
         {
             var content = await reportService.ExportReservationsCsvAsync(CurrentClubId, filter, cancellationToken);
-            return File(content, "text/csv; charset=utf-8", $"reporte-reservas-{DateTime.UtcNow:yyyyMMdd}.csv");
+            return File(content, "text/csv; charset=utf-8", $"reporte-reservations-{DateTime.UtcNow:yyyyMMdd}.csv");
         }
         catch (Application.Common.BusinessException exception)
         {

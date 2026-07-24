@@ -70,7 +70,7 @@ public sealed class PreventOverlappingAvailableTurns : Migration
                        AND candidate.[EndTime] > existing.[StartTime]
                 )
                 BEGIN
-                    ;THROW 51001, 'El horario se superpone con otro turno activo de la misma cancha.', 1;
+                    ;THROW 51001, 'El horario se superpone con otro time slot activo de la misma court.', 1;
                 END;
             END;
             """);

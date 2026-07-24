@@ -53,11 +53,11 @@ public sealed class PaymentRepository(PadelitoDbContext dbContext) : IPaymentRep
         var reservation = await dbContext.Reservations.Include(x => x.Payments).Include(x => x.Client).ThenInclude(x => x.Person)
             .Include(x => x.AvailableTurn).ThenInclude(x => x.Court)
             .FirstOrDefaultAsync(x => x.Id == payment.ReservationId && x.AvailableTurn.Court.ClubId == clubId, cancellationToken)
-            ?? throw new BusinessException("La reserva no existe.");
+            ?? throw new BusinessException("The reservation does not exist.");
         if (reservation.ReservationStatusId == ReservationStatusIds.Cancelled)
-            throw new BusinessException("No se pueden registrar pagos sobre una reserva cancelada.");
+            throw new BusinessException("Payments cannot be recorded for a canceled reservation.");
         if (reservation.Payments.Sum(x => x.Amount) + payment.Amount > reservation.FinalPrice)
-            throw new ConflictException("El saldo cambio mientras se registraba el pago. Revise el saldo pendiente.");
+            throw new ConflictException("The balance changed while the payment was being recorded. Review the outstanding balance.");
 
         payment.Reservation = reservation;
         payment.PaymentMethod = await dbContext.PaymentMethods.FirstAsync(x => x.Id == payment.PaymentMethodId, cancellationToken);

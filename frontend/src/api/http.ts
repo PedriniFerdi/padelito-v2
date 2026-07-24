@@ -55,7 +55,7 @@ export async function apiDownload(path: string): Promise<Blob> {
 }
 
 async function getErrorMessage(response: Response) {
-  const fallback = `La API respondio con estado ${response.status}.`
+  const fallback = `The API responded with status ${response.status}.`
 
   try {
     const data = (await response.json()) as { message?: string; title?: string; errors?: Record<string, string[]> }
