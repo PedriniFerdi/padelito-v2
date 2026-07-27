@@ -5,9 +5,15 @@ namespace Padelito.Application.Interfaces.Repositories;
 public interface IPaymentRepository
 {
     Task<List<PaymentReadModel>> GetPaymentsAsync(int clubId, DateTime? dateFromUtc, DateTime? dateToExclusiveUtc, int? methodId, int? reservationId, CancellationToken cancellationToken);
-    Task<Reservation?> GetReservationAsync(int id, int clubId, CancellationToken cancellationToken);
-    Task<PaymentMethod?> GetMethodAsync(int id, CancellationToken cancellationToken);
-    Task<Payment> AddPaymentAsync(int clubId, Payment payment, CancellationToken cancellationToken);
+    Task<Payment> AddFullPaymentAsync(
+        int clubId,
+        int reservationId,
+        int paymentMethodId,
+        string? note,
+        string username,
+        DateTime localNow,
+        DateTime utcNow,
+        CancellationToken cancellationToken);
 }
 
 public sealed record PaymentReadModel(

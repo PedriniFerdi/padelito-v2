@@ -36,5 +36,4 @@ public sealed class ReservationsController(IReservationService reservationServic
         HandleAsync(() => reservationService.ChangeStatusAsync(id, CurrentClubId, CurrentUsername, request, cancellationToken));
 
     private int CurrentEmployeeId => int.TryParse(User.FindFirstValue("EmployeeId"), out var value) ? value : throw new UnauthorizedAccessException();
-    private string CurrentUsername => User.FindFirstValue(ClaimTypes.Name) ?? throw new UnauthorizedAccessException();
 }
