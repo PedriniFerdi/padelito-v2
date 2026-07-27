@@ -69,8 +69,26 @@ public sealed class AuthService(
             UserId = user.Id,
             Username = user.Username,
             EmployeeId = user.EmployeeId,
-            Role = user.Role.Name,
+            Role = CanonicalRoleName(user.Role.Name),
             ClubId = user.Employee.ClubId
         };
+    }
+
+    private static string CanonicalRoleName(string roleName)
+    {
+        if (roleName.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Admin";
+        }
+
+        if (roleName.Equals("Recepcion", StringComparison.OrdinalIgnoreCase)
+            || roleName.Equals("Recepción", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Reception";
+        }
+
+        return roleName.Equals("Empleado", StringComparison.OrdinalIgnoreCase)
+            ? "Staff"
+            : roleName;
     }
 }
