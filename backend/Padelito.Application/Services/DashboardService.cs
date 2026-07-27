@@ -43,7 +43,9 @@ public sealed class DashboardService(IDashboardRepository repository, TimeProvid
         var reservedSlots = activeReservations.Count;
         var totalRevenue = activeReservations.Sum(Paid);
         var reservedValue = activeReservations.Sum(x => x.FinalPrice);
-        var pendingBalance = activeReservations.Sum(x => Math.Max(0, x.FinalPrice - Paid(x)));
+        var pendingBalance = activeReservations
+            .Where(x => x.ReservationStatusId is ReservationStatusIds.Pending or ReservationStatusIds.Confirmed)
+            .Sum(x => Math.Max(0, x.FinalPrice - Paid(x)));
         var cancellationRate = Rate(data.Reservations.Count(x => x.ReservationStatusId == ReservationStatusIds.Cancelled), data.Reservations.Count);
         var averageOccupancy = Rate(reservedSlots, totalAvailableSlots);
 

@@ -135,7 +135,6 @@ public sealed class ReservationServiceTests
     [InlineData(1, 2)]
     [InlineData(1, 3)]
     [InlineData(2, 3)]
-    [InlineData(2, 4)]
     public async Task ChangeStatus_accepts_valid_transitions(int current, int next)
     {
         var fixture = CreateFixture();
@@ -147,6 +146,7 @@ public sealed class ReservationServiceTests
 
     [Theory]
     [InlineData(1, 4)]
+    [InlineData(2, 4)]
     [InlineData(2, 1)]
     [InlineData(3, 1)]
     [InlineData(4, 3)]
@@ -177,9 +177,17 @@ public sealed class ReservationServiceTests
         var creation = Assert.Single(reservation.Audits);
         Assert.Equal("recepcion", creation.Username);
         Assert.Equal("Created", creation.Action);
+        Assert.Equal(
+            "Reservation created with status Pending for Ana Paz, court Central, time slot 14:00-15:00.",
+            creation.Description);
 
         await fixture.Service.ChangeStatusAsync(reservation.Id, 1, "recepcion", new(ReservationStatusIds.Confirmed), default);
-        Assert.Contains(reservation.Audits, audit => audit.Action == "StatusChanged" && audit.Username == "recepcion");
+        Assert.Contains(
+            reservation.Audits,
+            audit =>
+                audit.Action == "StatusChanged"
+                && audit.Username == "recepcion"
+                && audit.Description == "Status changed from Pending to Confirmed.");
     }
 
     [Fact]
@@ -243,7 +251,7 @@ public sealed class ReservationServiceTests
         repository.Statuses[2] = new ReservationStatus { Id = 2, Name = "Confirmed" };
         repository.Statuses[3] = new ReservationStatus { Id = 3, Name = "Canceled" };
         repository.Statuses[4] = new ReservationStatus { Id = 4, Name = "Completed" };
-        return (new ReservationService(repository, new FixedTimeProvider(Now), TimeZoneInfo.Utc), repository);
+        return (new ReservationService(repository, new NoOpReservationLifecycleService(), new FixedTimeProvider(Now), TimeZoneInfo.Utc), repository);
     }
 
     private static ReservationCreateDto Request(DateOnly? date = null, int statusId = 1, int? promotionId = null) =>
@@ -306,6 +314,46 @@ internal sealed class FakeReservationRepository : IReservationRepository
 
     public Task<bool> HasPaymentsAsync(int reservationId, CancellationToken cancellationToken) =>
         Task.FromResult(Reservations.FirstOrDefault(x => x.Id == reservationId)?.Payments.Count > 0);
+
+    public Task<Reservation> ChangeStatusAsync(
+        int id,
+        int clubId,
+        int newStatusId,
+        string username,
+        DateTime localNow,
+        DateTime utcNow,
+        CancellationToken cancellationToken)
+    {
+        var reservation = Reservations.FirstOrDefault(x => x.Id == id && x.AvailableTurn.Court.ClubId == clubId)
+            ?? throw new BusinessException("The reservation does not exist.");
+        if (newStatusId == ReservationStatusIds.Completed)
+            throw new BusinessException("Reservations are completed automatically after the time slot ends.");
+        if (reservation.ReservationDate.ToDateTime(reservation.AvailableTurn.StartTime) <= localNow)
+            throw new BusinessException("A reservation cannot be changed after the time slot has started.");
+        var valid = reservation.ReservationStatusId switch
+        {
+            ReservationStatusIds.Pending => newStatusId is ReservationStatusIds.Confirmed or ReservationStatusIds.Cancelled,
+            ReservationStatusIds.Confirmed => newStatusId == ReservationStatusIds.Cancelled,
+            _ => false
+        };
+        if (!valid) throw new BusinessException("The requested status change is not allowed.");
+        if (newStatusId == ReservationStatusIds.Cancelled && reservation.Payments.Count != 0)
+            throw new BusinessException("Reservations with recorded payments cannot be canceled.");
+        var status = Statuses.GetValueOrDefault(newStatusId)
+            ?? throw new BusinessException("The selected status does not exist.");
+        var previous = reservation.ReservationStatus.Name;
+        reservation.ReservationStatusId = status.Id;
+        reservation.ReservationStatus = status;
+        reservation.Audits.Add(new ReservationAudit
+        {
+            ReservationId = reservation.Id,
+            Action = "StatusChanged",
+            Description = $"Status changed from {previous} to {status.Name}.",
+            Username = username,
+            CreatedAt = utcNow
+        });
+        return Task.FromResult(reservation);
+    }
 
     public Task AddAsync(Reservation reservation, CancellationToken cancellationToken)
     {

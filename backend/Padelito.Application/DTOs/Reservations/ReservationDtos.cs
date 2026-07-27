@@ -22,6 +22,12 @@ public sealed record ReservationListDto(
     string? PromotionName,
     decimal BasePrice,
     decimal FinalPrice,
+    decimal TotalPaid,
+    decimal PendingBalance,
+    string PaymentStatus,
+    bool CanCollect,
+    bool CanConfirm,
+    bool CanCancel,
     DateTime CreatedAt);
 
 public sealed record ReservationDetailDto(
@@ -47,6 +53,9 @@ public sealed record ReservationDetailDto(
     decimal TotalPaid,
     decimal PendingBalance,
     string PaymentStatus,
+    bool CanCollect,
+    bool CanConfirm,
+    bool CanCancel,
     DateTime CreatedAt);
 
 public sealed record ReservationAvailabilityDto(
@@ -89,7 +98,10 @@ public sealed record OperationsReservationDto(
     decimal FinalPrice,
     decimal TotalPaid,
     decimal PendingBalance,
-    string PaymentStatus);
+    string PaymentStatus,
+    bool CanCollect,
+    bool CanConfirm,
+    bool CanCancel);
 
 public sealed record ReservationCreateDto(
     [Range(1, int.MaxValue, ErrorMessage = "Select a customer.")] int ClientId,

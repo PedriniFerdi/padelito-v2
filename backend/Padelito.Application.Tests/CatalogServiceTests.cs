@@ -17,9 +17,9 @@ public sealed class CatalogServiceTests
         {
             ProfileClient = ClientWithReservations(
                 Reservation(1, new(2026, 7, 6), ReservationStatusIds.Completed, new(19, 0), 100m, 100m),
-                Reservation(2, new(2026, 7, 13), ReservationStatusIds.Completed, new(19, 0), 120m, 70m),
+                Reservation(2, new(2026, 7, 13), ReservationStatusIds.Completed, new(19, 0), 120m, 120m),
                 Reservation(3, new(2026, 7, 15), ReservationStatusIds.Completed, new(18, 0), 90m, 90m),
-                Reservation(4, new(2026, 7, 20), ReservationStatusIds.Confirmed, new(20, 0), 200m, 50m),
+                Reservation(4, new(2026, 7, 20), ReservationStatusIds.Confirmed, new(20, 0), 200m, 0m),
                 Reservation(5, new(2026, 7, 21), ReservationStatusIds.Pending, new(21, 0), 160m, 0m),
                 Reservation(6, new(2026, 7, 22), ReservationStatusIds.Cancelled, new(22, 0), 500m, 0m))
         };
