@@ -357,11 +357,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Clubs",
-                columns: new[] { "Id", "Address", "CreatedAt", "Email", "IsActive", "Name", "Phone" },
-                values: new object[] { 1, "Buenos Aires", new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc), "admin@padelito.com", true, "Padelito", "11-4000-0000" });
-
-            migrationBuilder.InsertData(
                 table: "CourtTypes",
                 columns: new[] { "Id", "Description" },
                 values: new object[,]
@@ -385,11 +380,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "People",
-                columns: new[] { "Id", "CreatedAt", "Dni", "Email", "FirstName", "IsActive", "LastName", "Phone" },
-                values: new object[] { 1, new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc), "30111222", "carlos.benitez@padelito.com", "Carlos", true, "Benitez", "11-4000-1001" });
-
-            migrationBuilder.InsertData(
                 table: "ReservationStatuses",
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
@@ -409,16 +399,6 @@ namespace Padelito.Infrastructure.Data.Migrations
                     { 2, "Reception" },
                     { 3, "Staff" }
                 });
-
-            migrationBuilder.InsertData(
-                table: "Employees",
-                columns: new[] { "Id", "ClubId", "PersonId" },
-                values: new object[] { 1, 1, 1 });
-
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "CreatedAt", "EmployeeId", "IsActive", "PasswordHash", "RoleId", "Username" },
-                values: new object[] { 1, new DateTime(2026, 7, 8, 0, 0, 0, 0, DateTimeKind.Utc), 1, true, "AQAAAAIAAYagAAAAED2SFjyZfFosfjAmmH1n5FHdE59w+9e6K96p468HR/FvY6jo4v94M+pMCLf/9mpNhA==", 1, "admin" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AvailableTurns_CourtId_StartTime_EndTime",

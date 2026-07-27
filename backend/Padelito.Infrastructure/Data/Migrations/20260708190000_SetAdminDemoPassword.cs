@@ -2,32 +2,18 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Padelito.Infrastructure.Data.Migrations
+namespace Padelito.Infrastructure.Data.Migrations;
+
+public partial class SetAdminDemoPassword : Migration
 {
-    /// <inheritdoc />
-    public partial class SetAdminDemoPassword : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        private const string DemoPasswordHash = "AQAAAAIAAYagAAAAED2SFjyZfFosfjAmmH1n5FHdE59w+9e6K96p468HR/FvY6jo4v94M+pMCLf/9mpNhA==";
-        private const string PreviousPasswordHash = "AQAAAAIAAYagAAAAEKlUxApUaC++Cpt9h52jpYYoOh5rsBiS+qS16LsV4dmOmG5Yc8vYpEJT0IAght085A==";
+        // Historical migration ID retained for databases that already recorded it.
+        // Production bootstrap owns administrator credential provisioning.
+    }
 
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.Sql($"""
-                UPDATE [Users]
-                SET [PasswordHash] = N'{DemoPasswordHash}'
-                WHERE [Id] = 1 AND [Username] = N'admin';
-                """);
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.Sql($"""
-                UPDATE [Users]
-                SET [PasswordHash] = N'{PreviousPasswordHash}'
-                WHERE [Id] = 1 AND [Username] = N'admin';
-                """);
-        }
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        // Never rewrite an administrator credential during rollback.
     }
 }
