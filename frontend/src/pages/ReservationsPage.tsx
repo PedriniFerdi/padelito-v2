@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarCheck, Check, CircleX, CreditCard, Flag, Plus, X } from 'lucide-react'
+import { CalendarCheck, Check, CircleX, CreditCard, Plus, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ApiRequestError } from '@/api/http'
 import {
@@ -132,7 +132,7 @@ export function ReservationsPage() {
   )
 }
 
-function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; onCreated: () => void | Promise<void> }) {
+export function CreateReservationPanel({ onClose, onCreated }: { onClose: () => void; onCreated: () => void | Promise<void> }) {
   const today = todayInClub()
   const [date, setDate] = useState(today)
   const [clientId, setClientId] = useState('')
@@ -279,10 +279,9 @@ function ReservationsTable({ items, isChanging, onChangeStatus }: { items: Reser
 
 function StatusActions({ item, disabled, onChange }: { item: Reservation; disabled: boolean; onChange: (id: number, statusId: number) => void }) {
   return <div className="flex justify-end gap-2">
-    {item.status !== 'Canceled' && <Link className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#C4B5FD] px-2.5 py-2 text-xs font-bold text-[#6D28D9] hover:bg-[#F5F3FF]" to={`/payments?reservationId=${item.id}`}><CreditCard className="size-3.5"/>Collect</Link>}
-    {item.status === 'Pending' && <ActionButton icon={Check} label="Confirm" disabled={disabled} onClick={() => onChange(item.id, statusIds.Confirmed)} />}
-    {item.status === 'Confirmed' && <ActionButton icon={Flag} label="Complete" disabled={disabled} onClick={() => onChange(item.id, statusIds.Completed)} />}
-    {(item.status === 'Pending' || item.status === 'Confirmed') && <ActionButton destructive icon={CircleX} label="Cancel" disabled={disabled} onClick={() => onChange(item.id, statusIds.Canceled)} />}
+    {item.canCollect && <Link className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#C4B5FD] px-2.5 py-2 text-xs font-bold text-[#6D28D9] hover:bg-[#F5F3FF]" to={`/payments?reservationId=${item.id}`}><CreditCard className="size-3.5"/>Collect</Link>}
+    {item.canConfirm && <ActionButton icon={Check} label="Confirm" disabled={disabled} onClick={() => onChange(item.id, statusIds.Confirmed)} />}
+    {item.canCancel && <ActionButton destructive icon={CircleX} label="Cancel" disabled={disabled} onClick={() => onChange(item.id, statusIds.Canceled)} />}
   </div>
 }
 
