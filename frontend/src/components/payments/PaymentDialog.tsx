@@ -22,7 +22,6 @@ type PaymentDialogProps = {
 export function PaymentDialog({ reservations, methods, initialReservationId, onClose, onSaved }: PaymentDialogProps) {
   const [reservationId, setReservationId] = useState(initialReservationId ?? 0)
   const [methodId, setMethodId] = useState(0)
-  const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const detail = useQuery({
@@ -37,8 +36,6 @@ export function PaymentDialog({ reservations, methods, initialReservationId, onC
     const parsed = paymentSchema.safeParse({
       reservationId,
       paymentMethodId: methodId,
-      amount: amount === '' ? Number.NaN : Number(amount),
-      pendingBalance: detail.data?.pendingBalance ?? 0,
       note,
     })
     if (!parsed.success) {
@@ -49,8 +46,6 @@ export function PaymentDialog({ reservations, methods, initialReservationId, onC
     mutation.mutate({
       reservationId: parsed.data.reservationId,
       paymentMethodId: parsed.data.paymentMethodId,
-      amount: parsed.data.amount,
-      paymentDate: new Date().toISOString(),
       note: parsed.data.note || null,
     })
   }
@@ -117,20 +112,10 @@ export function PaymentDialog({ reservations, methods, initialReservationId, onC
             </select>
             {fieldErrors.paymentMethodId ? <span className="mt-1 block text-xs text-red-600">{fieldErrors.paymentMethodId}</span> : null}
           </label>
-          <label className="block text-sm font-bold text-[#334155]">
-            Amount
-            <input
-              className={`${input} mt-1`}
-              max={detail.data?.pendingBalance}
-              min="0.01"
-              onChange={(event) => setAmount(event.target.value)}
-              required
-              step="0.01"
-              type="number"
-              value={amount}
-            />
-            {fieldErrors.amount ? <span className="mt-1 block text-xs text-red-600">{fieldErrors.amount}</span> : null}
-          </label>
+          <div className="rounded-xl border border-[#99F6E4] bg-[#F0FDFA] p-3 text-sm text-[#334155]">
+            Full payment amount
+            <b className="ml-2 text-base text-[#0F766E]">{detail.data ? money.format(detail.data.finalPrice) : '-'}</b>
+          </div>
           <label className="block text-sm font-bold text-[#334155]">
             Note
             <textarea className={`${input} mt-1`} maxLength={255} onChange={(event) => setNote(event.target.value)} rows={2} value={note} />
@@ -144,7 +129,7 @@ export function PaymentDialog({ reservations, methods, initialReservationId, onC
           </button>
           <button
             className="rounded-xl bg-[#0F766E] px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-            disabled={mutation.isPending || !reservationId || !methodId || !amount || !detail.data}
+            disabled={mutation.isPending || !reservationId || !methodId || !detail.data?.canCollect}
             type="submit"
           >
             Save payment

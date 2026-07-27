@@ -53,10 +53,8 @@ export const reservationSchema = z.object({
 export const paymentSchema = z.object({
   reservationId: z.number().int().positive('Select a reservation.'),
   paymentMethodId: z.number().int().positive('Select a payment method.'),
-  amount: z.number().finite().positive('Amount must be greater than zero.'),
-  pendingBalance: z.number().nonnegative(),
   note: z.string().trim().max(255, 'Note cannot exceed 255 characters.'),
-}).refine(values => values.amount <= values.pendingBalance, { path: ['amount'], message: 'Amount cannot exceed the outstanding balance.' })
+})
 
 export type FieldErrors = Record<string, string>
 
