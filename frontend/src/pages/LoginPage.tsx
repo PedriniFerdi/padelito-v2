@@ -33,7 +33,7 @@ export function LoginPage() {
   } = useForm<LoginFormValues>({
     defaultValues: {
       username: 'admin',
-      password: '',
+      password: 'admin123',
     },
   })
 
@@ -53,7 +53,7 @@ export function LoginPage() {
     try {
       await auth.login(parsed.data)
       const state = location.state as LocationState | null
-      navigate(state?.from?.pathname ?? '/dashboard', { replace: true })
+      navigate(state?.from?.pathname ?? '/operations', { replace: true })
     } catch (error) {
       if (error instanceof ApiRequestError && error.statusCode === 401) {
         setFormError('Incorrect username or password.')
