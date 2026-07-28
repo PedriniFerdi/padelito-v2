@@ -280,6 +280,7 @@ public sealed class PadelitoDbContext(DbContextOptions<PadelitoDbContext> option
             entity.Property(x => x.Amount).HasColumnType("decimal(10,2)");
             entity.Property(x => x.PaymentDate).HasColumnType("datetime2");
             entity.Property(x => x.Note).HasMaxLength(255);
+            entity.HasIndex(x => x.ReservationId).IsUnique();
             entity.HasOne(x => x.Reservation)
                 .WithMany(x => x.Payments)
                 .HasForeignKey(x => x.ReservationId)

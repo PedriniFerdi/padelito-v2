@@ -36,33 +36,65 @@ public sealed class PaymentRepository(PadelitoDbContext dbContext) : IPaymentRep
             .ToListAsync(cancellationToken);
     }
 
-    public Task<Reservation?> GetReservationAsync(int id, int clubId, CancellationToken cancellationToken) =>
-        dbContext.Reservations.Include(x => x.Payments).Include(x => x.Client).ThenInclude(x => x.Person)
-            .Include(x => x.AvailableTurn).ThenInclude(x => x.Court)
-            .FirstOrDefaultAsync(x => x.Id == id && x.AvailableTurn.Court.ClubId == clubId, cancellationToken);
-
-    public Task<PaymentMethod?> GetMethodAsync(int id, CancellationToken cancellationToken) =>
-        dbContext.PaymentMethods.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-    public async Task<Payment> AddPaymentAsync(int clubId, Payment payment, CancellationToken cancellationToken)
+    public async Task<Payment> AddFullPaymentAsync(
+        int clubId,
+        int reservationId,
+        int paymentMethodId,
+        string? note,
+        string username,
+        DateTime localNow,
+        DateTime utcNow,
+        CancellationToken cancellationToken)
     {
-        // The service performs an early validation for a friendly error. Clear those tracked
-        // entities so the transactional query below always observes the latest committed balance.
-        dbContext.ChangeTracker.Clear();
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var reservation = await dbContext.Reservations.Include(x => x.Payments).Include(x => x.Client).ThenInclude(x => x.Person)
             .Include(x => x.AvailableTurn).ThenInclude(x => x.Court)
-            .FirstOrDefaultAsync(x => x.Id == payment.ReservationId && x.AvailableTurn.Court.ClubId == clubId, cancellationToken)
+            .FirstOrDefaultAsync(x => x.Id == reservationId && x.AvailableTurn.Court.ClubId == clubId, cancellationToken)
             ?? throw new BusinessException("The reservation does not exist.");
-        if (reservation.ReservationStatusId == ReservationStatusIds.Cancelled)
-            throw new BusinessException("Payments cannot be recorded for a canceled reservation.");
-        if (reservation.Payments.Sum(x => x.Amount) + payment.Amount > reservation.FinalPrice)
-            throw new ConflictException("The balance changed while the payment was being recorded. Review the outstanding balance.");
 
-        payment.Reservation = reservation;
-        payment.PaymentMethod = await dbContext.PaymentMethods.FirstAsync(x => x.Id == payment.PaymentMethodId, cancellationToken);
-        await dbContext.Payments.AddAsync(payment, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        if (reservation.ReservationStatusId is not (ReservationStatusIds.Pending or ReservationStatusIds.Confirmed))
+            throw new BusinessException("Only active reservations can be paid.");
+        var start = reservation.ReservationDate.ToDateTime(reservation.AvailableTurn.StartTime);
+        if (localNow >= start)
+            throw new BusinessException("Payments cannot be recorded after the time slot has started.");
+        if (reservation.Payments.Count != 0)
+            throw new ConflictException("This reservation already has a recorded payment.");
+
+        var method = await dbContext.PaymentMethods.FirstOrDefaultAsync(
+            x => x.Id == paymentMethodId, cancellationToken)
+            ?? throw new BusinessException("The selected payment method does not exist.");
+        var payment = new Payment
+        {
+            ReservationId = reservation.Id,
+            Reservation = reservation,
+            PaymentMethodId = method.Id,
+            PaymentMethod = method,
+            Amount = reservation.FinalPrice,
+            PaymentDate = utcNow,
+            Note = note
+        };
+        reservation.Payments.Add(payment);
+        if (reservation.ReservationStatusId == ReservationStatusIds.Pending)
+        {
+            reservation.ReservationStatusId = ReservationStatusIds.Confirmed;
+            reservation.Audits.Add(new ReservationAudit
+            {
+                ReservationId = reservation.Id,
+                Action = "PaymentConfirmed",
+                Description = $"Full payment of ${reservation.FinalPrice:N2} recorded; reservation confirmed automatically.",
+                Username = username,
+                CreatedAt = utcNow
+            });
+        }
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.GetBaseException() is Microsoft.Data.SqlClient.SqlException { Number: 1205 or 2601 or 2627 })
+        {
+            throw new ConflictException("This reservation already has a recorded payment.");
+        }
         await transaction.CommitAsync(cancellationToken);
         return payment;
     }

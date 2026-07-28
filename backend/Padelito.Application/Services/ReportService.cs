@@ -15,8 +15,13 @@ public sealed class ReportService(IReportRepository repository) : IReportService
         ValidateRange(filter.DateFrom, filter.DateTo);
         var reservations = await repository.GetReservationsAsync(clubId, filter.DateFrom, filter.DateTo, filter.StatusId, cancellationToken);
         var rows = reservations.Select(ToRow).ToList();
+        var billableRows = rows.Where(x => x.ReservationStatusId != ReservationStatusIds.Cancelled).ToList();
         return new ReservationReportDto(
-            new ReservationReportSummaryDto(rows.Count, rows.Sum(x => x.FinalPrice), rows.Sum(x => x.TotalPaid), rows.Sum(x => x.PendingBalance)),
+            new ReservationReportSummaryDto(
+                rows.Count,
+                billableRows.Sum(x => x.FinalPrice),
+                rows.Sum(x => x.TotalPaid),
+                billableRows.Sum(x => x.PendingBalance)),
             rows);
     }
 
@@ -42,13 +47,15 @@ public sealed class ReportService(IReportRepository repository) : IReportService
     private static ReservationReportRowDto ToRow(Reservation reservation)
     {
         var paid = reservation.Payments.Sum(x => x.Amount);
-        var balance = Math.Max(0, reservation.FinalPrice - paid);
+        var canceled = reservation.ReservationStatusId == ReservationStatusIds.Cancelled;
+        var active = reservation.ReservationStatusId is ReservationStatusIds.Pending or ReservationStatusIds.Confirmed;
+        var balance = active ? Math.Max(0, reservation.FinalPrice - paid) : 0;
         return new ReservationReportRowDto(
             reservation.Id, reservation.ReservationDate, reservation.AvailableTurn.StartTime, reservation.AvailableTurn.EndTime,
             $"{reservation.Client.Person.FirstName} {reservation.Client.Person.LastName}", reservation.AvailableTurn.Court.Name,
             reservation.ReservationStatusId, reservation.ReservationStatus.Name, reservation.Promotion?.Name,
             reservation.BasePrice, reservation.FinalPrice, paid, balance,
-            paid <= 0 ? "Unpaid" : balance > 0 ? "Partially paid" : "Paid");
+            canceled ? "Canceled" : paid == reservation.FinalPrice ? "Paid" : "Unpaid");
     }
 
     private static void ValidateRange(DateOnly? from, DateOnly? to)

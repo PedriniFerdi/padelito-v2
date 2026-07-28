@@ -8,6 +8,7 @@ namespace Padelito.Application.Services;
 
 public sealed class ReservationService(
     IReservationRepository repository,
+    IReservationLifecycleService lifecycleService,
     TimeProvider timeProvider,
     TimeZoneInfo clubTimeZone) : IReservationService
 {
@@ -34,14 +35,21 @@ public sealed class ReservationService(
             throw new BusinessException("The status does not match the selected view.");
         }
 
+        await lifecycleService.ReconcileAsync(clubId, cancellationToken);
+        var localNow = GetLocalNow();
         var reservations = await repository.GetReservationsAsync(
             clubId, statuses, filter.DateFrom, filter.DateTo, filter.StatusId, cancellationToken);
-        return reservations.Select(ToListDto).ToList();
+        if (view == "active")
+        {
+            reservations = reservations.Where(x => SlotStart(x) > localNow).ToList();
+        }
+        return reservations.Select(x => ToListDto(x, localNow)).ToList();
     }
 
     public async Task<ReservationDetailDto> GetReservationAsync(int id, int clubId, CancellationToken cancellationToken)
     {
-        return ToDetailDto(await RequireReservationAsync(id, clubId, false, cancellationToken));
+        await lifecycleService.ReconcileAsync(clubId, cancellationToken);
+        return ToDetailDto(await RequireReservationAsync(id, clubId, false, cancellationToken), GetLocalNow());
     }
 
     public async Task<IReadOnlyList<ReservationAvailabilityDto>> GetAvailabilityAsync(
@@ -73,6 +81,7 @@ public sealed class ReservationService(
 
     public async Task<OperationsBoardDto> GetOperationsBoardAsync(int clubId, CancellationToken cancellationToken)
     {
+        await lifecycleService.ReconcileAsync(clubId, cancellationToken);
         var generatedAt = timeProvider.GetUtcNow();
         var localNow = TimeZoneInfo.ConvertTime(generatedAt, clubTimeZone).DateTime;
         var operationalDate = DateOnly.FromDateTime(localNow);
@@ -81,7 +90,7 @@ public sealed class ReservationService(
         var activeReservations = reservations
             .Where(x => x.ReservationStatusId is ReservationStatusIds.Pending or ReservationStatusIds.Confirmed)
             .ToList();
-        var operationItems = reservations.Select(ToOperationsDto).ToList();
+        var operationItems = reservations.Select(x => ToOperationsDto(x, localNow)).ToList();
 
         var timeline = operationItems
             .GroupBy(x => new { x.CourtId, x.CourtName })
@@ -93,7 +102,7 @@ public sealed class ReservationService(
             .ToList();
 
         var upcomingUnpaid = activeReservations
-            .Select(ToOperationsDto)
+            .Select(x => ToOperationsDto(x, localNow))
             .Where(x => x.PendingBalance > 0)
             .OrderBy(x => x.StartTime)
             .ThenBy(x => x.CourtName)
@@ -104,7 +113,7 @@ public sealed class ReservationService(
                 var minutesUntilStart = (x.AvailableTurn.StartTime - currentTime).TotalMinutes;
                 return minutesUntilStart >= 0 && minutesUntilStart <= 60;
             })
-            .Select(ToOperationsDto)
+            .Select(x => ToOperationsDto(x, localNow))
             .OrderBy(x => x.StartTime)
             .ThenBy(x => x.CourtName)
             .ToList();
@@ -204,14 +213,14 @@ public sealed class ReservationService(
         {
             Reservation = reservation,
             Action = "Created",
-            Description = $"Reservation creada en status {status.Name} para {client.Person.FirstName} {client.Person.LastName}, court {turn.Court.Name}, time slot {turn.StartTime:HH\\:mm}-{turn.EndTime:HH\\:mm}.",
+            Description = $"Reservation created with status {status.Name} for {client.Person.FirstName} {client.Person.LastName}, court {turn.Court.Name}, time slot {turn.StartTime:HH\\:mm}-{turn.EndTime:HH\\:mm}.",
             Username = username,
             CreatedAt = timeProvider.GetUtcNow().UtcDateTime
         });
 
         await repository.AddAsync(reservation, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
-        return ToDetailDto(reservation);
+        return ToDetailDto(reservation, GetLocalNow());
     }
 
     public async Task<ReservationDetailDto> ChangeStatusAsync(
@@ -221,33 +230,18 @@ public sealed class ReservationService(
         ReservationChangeStatusDto request,
         CancellationToken cancellationToken)
     {
-        var reservation = await RequireReservationAsync(id, clubId, true, cancellationToken);
-        if (!IsValidTransition(reservation.ReservationStatusId, request.ReservationStatusId))
-        {
-            throw new BusinessException("The requested status change is not allowed.");
-        }
-
-        if (request.ReservationStatusId == ReservationStatusIds.Cancelled && await repository.HasPaymentsAsync(id, cancellationToken))
-        {
-            throw new BusinessException("Reservations with recorded payments cannot be canceled.");
-        }
-
-        var newStatus = await repository.GetStatusAsync(request.ReservationStatusId, cancellationToken)
-            ?? throw new BusinessException("The selected status does not exist.");
-        var previousStatus = reservation.ReservationStatus.Name;
-        reservation.ReservationStatusId = newStatus.Id;
-        reservation.ReservationStatus = newStatus;
-        reservation.Audits.Add(new ReservationAudit
-        {
-            ReservationId = reservation.Id,
-            Action = "StatusChanged",
-            Description = $"Status cambiado de {previousStatus} a {newStatus.Name}.",
-            Username = username,
-            CreatedAt = timeProvider.GetUtcNow().UtcDateTime
-        });
-
-        await repository.SaveChangesAsync(cancellationToken);
-        return ToDetailDto(reservation);
+        await lifecycleService.ReconcileAsync(clubId, cancellationToken);
+        var utcNow = timeProvider.GetUtcNow();
+        var localNow = TimeZoneInfo.ConvertTime(utcNow, clubTimeZone).DateTime;
+        var reservation = await repository.ChangeStatusAsync(
+            id,
+            clubId,
+            request.ReservationStatusId,
+            username,
+            localNow,
+            utcNow.UtcDateTime,
+            cancellationToken);
+        return ToDetailDto(reservation, localNow);
     }
 
     private async Task<Reservation> RequireReservationAsync(int id, int clubId, bool trackChanges, CancellationToken cancellationToken)
@@ -283,16 +277,6 @@ public sealed class ReservationService(
         }
     }
 
-    private static bool IsValidTransition(int currentStatusId, int newStatusId)
-    {
-        return currentStatusId switch
-        {
-            ReservationStatusIds.Pending => newStatusId is ReservationStatusIds.Confirmed or ReservationStatusIds.Cancelled,
-            ReservationStatusIds.Confirmed => newStatusId is ReservationStatusIds.Completed or ReservationStatusIds.Cancelled,
-            _ => false
-        };
-    }
-
     private static decimal CalculateBasePrice(AvailableTurn turn)
     {
         var durationMinutes = (decimal)(turn.EndTime - turn.StartTime).TotalMinutes;
@@ -305,8 +289,10 @@ public sealed class ReservationService(
         return decimal.Round(basePrice * multiplier, 2, MidpointRounding.AwayFromZero);
     }
 
-    private static ReservationListDto ToListDto(Reservation reservation)
+    private static ReservationListDto ToListDto(Reservation reservation, DateTime localNow)
     {
+        var (totalPaid, pendingBalance, paymentStatus) = PaymentSummary(reservation);
+        var (canCollect, canConfirm, canCancel) = Capabilities(reservation, localNow);
         return new ReservationListDto(
             reservation.Id,
             reservation.ReservationDate,
@@ -321,12 +307,19 @@ public sealed class ReservationService(
             reservation.Promotion?.Name,
             reservation.BasePrice,
             reservation.FinalPrice,
+            totalPaid,
+            pendingBalance,
+            paymentStatus,
+            canCollect,
+            canConfirm,
+            canCancel,
             reservation.CreatedAt);
     }
 
-    private static ReservationDetailDto ToDetailDto(Reservation reservation)
+    private static ReservationDetailDto ToDetailDto(Reservation reservation, DateTime localNow)
     {
         var (totalPaid, pendingBalance, paymentStatus) = PaymentSummary(reservation);
+        var (canCollect, canConfirm, canCancel) = Capabilities(reservation, localNow);
         return new ReservationDetailDto(
             reservation.Id,
             reservation.ReservationDate,
@@ -350,12 +343,16 @@ public sealed class ReservationService(
             totalPaid,
             pendingBalance,
             paymentStatus,
+            canCollect,
+            canConfirm,
+            canCancel,
             reservation.CreatedAt);
     }
 
-    private static OperationsReservationDto ToOperationsDto(Reservation reservation)
+    private static OperationsReservationDto ToOperationsDto(Reservation reservation, DateTime localNow)
     {
         var (totalPaid, pendingBalance, paymentStatus) = PaymentSummary(reservation);
+        var (canCollect, canConfirm, canCancel) = Capabilities(reservation, localNow);
         return new OperationsReservationDto(
             reservation.Id,
             reservation.ReservationDate,
@@ -371,16 +368,37 @@ public sealed class ReservationService(
             reservation.FinalPrice,
             totalPaid,
             pendingBalance,
-            paymentStatus);
+            paymentStatus,
+            canCollect,
+            canConfirm,
+            canCancel);
     }
 
     private static (decimal TotalPaid, decimal PendingBalance, string PaymentStatus) PaymentSummary(Reservation reservation)
     {
         var totalPaid = reservation.Payments.Sum(x => x.Amount);
-        var pendingBalance = Math.Max(0, reservation.FinalPrice - totalPaid);
-        var paymentStatus = totalPaid <= 0 ? "Unpaid" : pendingBalance > 0 ? "Partially paid" : "Paid";
+        var canceled = reservation.ReservationStatusId == ReservationStatusIds.Cancelled;
+        var active = reservation.ReservationStatusId is ReservationStatusIds.Pending or ReservationStatusIds.Confirmed;
+        var pendingBalance = active ? Math.Max(0, reservation.FinalPrice - totalPaid) : 0;
+        var paymentStatus = canceled ? "Canceled" : totalPaid == reservation.FinalPrice ? "Paid" : "Unpaid";
         return (totalPaid, pendingBalance, paymentStatus);
     }
+
+    private static (bool CanCollect, bool CanConfirm, bool CanCancel) Capabilities(
+        Reservation reservation,
+        DateTime localNow)
+    {
+        var active = reservation.ReservationStatusId is ReservationStatusIds.Pending or ReservationStatusIds.Confirmed;
+        var beforeStart = SlotStart(reservation) > localNow;
+        var hasPayments = reservation.Payments.Count != 0;
+        return (
+            active && beforeStart && !hasPayments,
+            reservation.ReservationStatusId == ReservationStatusIds.Pending && beforeStart,
+            active && beforeStart && !hasPayments);
+    }
+
+    private static DateTime SlotStart(Reservation reservation) =>
+        reservation.ReservationDate.ToDateTime(reservation.AvailableTurn.StartTime);
 
     private static string FullName(Person person) => $"{person.FirstName} {person.LastName}";
 }

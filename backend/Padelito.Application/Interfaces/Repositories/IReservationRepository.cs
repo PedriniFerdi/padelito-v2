@@ -22,6 +22,14 @@ public interface IReservationRepository
     Task<ReservationStatus?> GetStatusAsync(int id, CancellationToken cancellationToken);
     Task<bool> IsOccupiedAsync(DateOnly date, int availableTurnId, CancellationToken cancellationToken);
     Task<bool> HasPaymentsAsync(int reservationId, CancellationToken cancellationToken);
+    Task<Reservation> ChangeStatusAsync(
+        int id,
+        int clubId,
+        int newStatusId,
+        string username,
+        DateTime localNow,
+        DateTime utcNow,
+        CancellationToken cancellationToken);
     Task AddAsync(Reservation reservation, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

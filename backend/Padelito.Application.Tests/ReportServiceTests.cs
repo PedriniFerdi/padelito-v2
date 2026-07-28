@@ -19,7 +19,7 @@ public sealed class ReportServiceTests
         Assert.Equal(175, report.Summary.TotalPaid);
         Assert.Equal(125, report.Summary.PendingBalance);
         Assert.Contains(report.Rows, x => x.PaymentStatus == "Paid");
-        Assert.Contains(report.Rows, x => x.PaymentStatus == "Partially paid");
+        Assert.Contains(report.Rows, x => x.PaymentStatus == "Unpaid");
     }
 
     [Fact]

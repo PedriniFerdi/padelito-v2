@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Padelito.Application.DTOs.Payments;
 
@@ -8,11 +9,10 @@ public sealed record PaymentFilterDto(
     int? MethodId = null,
     int? ReservationId = null);
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record PaymentCreateDto(
     [Range(1, int.MaxValue, ErrorMessage = "Select a reservation.")] int ReservationId,
     [Range(1, int.MaxValue, ErrorMessage = "Select a payment method.")] int PaymentMethodId,
-    [Range(0.01, 99999999.99, ErrorMessage = "Amount must be greater than zero.")] decimal Amount,
-    DateTime PaymentDate,
     [StringLength(255, ErrorMessage = "Note cannot exceed 255 characters.")] string? Note);
 
 public sealed record PaymentListDto(
