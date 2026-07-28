@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -21,18 +22,39 @@ public static partial class ProductionBootstrapper
 
         using var scope = services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PadelitoDbContext>();
+        var values = ReadAndValidate(configuration);
 
-        if (await dbContext.Users.AnyAsync(cancellationToken))
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var existingUser = await dbContext.Users
+            .Include(x => x.Role)
+            .Include(x => x.Employee)
+                .ThenInclude(x => x.Club)
+            .Include(x => x.Employee)
+                .ThenInclude(x => x.Person)
+            .SingleOrDefaultAsync(x => x.Username == values.AdminUsername, cancellationToken);
+
+        if (existingUser is not null && await IsExactCompletedBootstrapAsync(dbContext, existingUser, values, cancellationToken))
         {
-            logger.LogWarning("Bootstrap is enabled but users already exist. No bootstrap data was created; disable Bootstrap__Enabled.");
+            await transaction.CommitAsync(cancellationToken);
+            logger.LogWarning(
+                "Bootstrap is still enabled for the already provisioned club {ClubId} and administrator {UserId}. Disable Bootstrap__Enabled and remove its password.",
+                existingUser.Employee.ClubId,
+                existingUser.Id);
             return;
         }
 
-        var values = ReadAndValidate(configuration);
+        if (await HasApplicationDataAsync(dbContext, cancellationToken))
+        {
+            throw new InvalidOperationException(
+                "Bootstrap requires an empty application database or the exact previously bootstrapped administrator graph. No data was changed.");
+        }
+
         var adminRole = await dbContext.Roles.SingleOrDefaultAsync(x => x.Name == "Admin", cancellationToken)
             ?? throw new InvalidOperationException("The Admin role is missing. Apply database migrations before enabling bootstrap.");
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var now = DateTime.UtcNow;
         var club = new Club
         {
@@ -75,6 +97,60 @@ public static partial class ProductionBootstrapper
         await transaction.CommitAsync(cancellationToken);
 
         logger.LogInformation("Production bootstrap created the initial club and administrator. Disable bootstrap and remove its password now.");
+    }
+
+    private static async Task<bool> IsExactCompletedBootstrapAsync(
+        PadelitoDbContext dbContext,
+        User user,
+        BootstrapValues values,
+        CancellationToken cancellationToken)
+    {
+        var person = user.Employee.Person;
+        var club = user.Employee.Club;
+
+        if (!user.IsActive
+            || user.Role.Name != "Admin"
+            || !club.IsActive
+            || !string.Equals(club.Name, values.ClubName, StringComparison.Ordinal)
+            || !string.Equals(club.Email, values.AdminEmail, StringComparison.OrdinalIgnoreCase)
+            || !person.IsActive
+            || !string.Equals(person.FirstName, values.AdminFirstName, StringComparison.Ordinal)
+            || !string.Equals(person.LastName, values.AdminLastName, StringComparison.Ordinal)
+            || !string.Equals(person.Dni, values.AdminDni, StringComparison.Ordinal)
+            || !string.Equals(person.Phone, values.AdminPhone, StringComparison.Ordinal)
+            || !string.Equals(person.Email, values.AdminEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return await dbContext.Clubs.CountAsync(cancellationToken) == 1
+            && await dbContext.People.CountAsync(cancellationToken) == 1
+            && await dbContext.Employees.CountAsync(cancellationToken) == 1
+            && await dbContext.Users.CountAsync(cancellationToken) == 1
+            && !await dbContext.Clients.AnyAsync(cancellationToken)
+            && !await dbContext.Courts.AnyAsync(cancellationToken)
+            && !await dbContext.AvailableTurns.AnyAsync(cancellationToken)
+            && !await dbContext.Promotions.AnyAsync(cancellationToken)
+            && !await dbContext.Reservations.AnyAsync(cancellationToken)
+            && !await dbContext.Payments.AnyAsync(cancellationToken)
+            && !await dbContext.ReservationAudits.AnyAsync(cancellationToken);
+    }
+
+    private static async Task<bool> HasApplicationDataAsync(
+        PadelitoDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.Clubs.AnyAsync(cancellationToken)
+            || await dbContext.People.AnyAsync(cancellationToken)
+            || await dbContext.Clients.AnyAsync(cancellationToken)
+            || await dbContext.Employees.AnyAsync(cancellationToken)
+            || await dbContext.Users.AnyAsync(cancellationToken)
+            || await dbContext.Courts.AnyAsync(cancellationToken)
+            || await dbContext.AvailableTurns.AnyAsync(cancellationToken)
+            || await dbContext.Promotions.AnyAsync(cancellationToken)
+            || await dbContext.Reservations.AnyAsync(cancellationToken)
+            || await dbContext.Payments.AnyAsync(cancellationToken)
+            || await dbContext.ReservationAudits.AnyAsync(cancellationToken);
     }
 
     private static BootstrapValues ReadAndValidate(IConfiguration configuration)
