@@ -12,5 +12,5 @@ export function PublicOnlyRoute() {
     )
   }
 
-  return auth.isAuthenticated ? <Navigate replace to="/dashboard" /> : <Outlet />
+  return auth.isAuthenticated ? <Navigate replace to="/operations" /> : <Outlet />
 }

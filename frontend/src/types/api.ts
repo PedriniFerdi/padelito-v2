@@ -119,6 +119,12 @@ export type Reservation = {
   promotionName?: string | null
   basePrice: number
   finalPrice: number
+  totalPaid: number
+  pendingBalance: number
+  paymentStatus: 'Unpaid' | 'Paid' | 'Canceled'
+  canCollect: boolean
+  canConfirm: boolean
+  canCancel: boolean
   createdAt: string
 }
 
@@ -129,9 +135,6 @@ export type ReservationDetail = Reservation & {
   employeeName: string
   promotionId?: number | null
   discountPercentage?: number | null
-  totalPaid: number
-  pendingBalance: number
-  paymentStatus: 'Unpaid' | 'Partially paid' | 'Paid'
 }
 
 export type ReservationAvailability = {
@@ -159,7 +162,10 @@ export type OperationsReservation = {
   finalPrice: number
   totalPaid: number
   pendingBalance: number
-  paymentStatus: 'Unpaid' | 'Partially paid' | 'Paid'
+  paymentStatus: 'Unpaid' | 'Paid' | 'Canceled'
+  canCollect: boolean
+  canConfirm: boolean
+  canCancel: boolean
 }
 
 export type OperationsCourtTimeline = {
@@ -280,7 +286,7 @@ export type ReservationReportRow = {
   finalPrice: number
   totalPaid: number
   pendingBalance: number
-  paymentStatus: 'Unpaid' | 'Partially paid' | 'Paid'
+  paymentStatus: 'Unpaid' | 'Paid' | 'Canceled'
 }
 
 export type ReservationReport = {
