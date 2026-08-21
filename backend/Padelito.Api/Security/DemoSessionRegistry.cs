@@ -13,6 +13,7 @@ public sealed class DemoSessionRegistry
     private readonly SemaphoreSlim registryLock = new(1, 1);
     private readonly IProductionPadelitoDbContextFactory productionFactory;
     private readonly TimeProvider timeProvider;
+    private readonly TimeZoneInfo clubTimeZone;
     private readonly ILogger<DemoSessionRegistry> logger;
     private readonly TimeSpan idleTimeout;
     private readonly int maxSessions;
@@ -21,10 +22,12 @@ public sealed class DemoSessionRegistry
         IProductionPadelitoDbContextFactory productionFactory,
         IConfiguration configuration,
         TimeProvider timeProvider,
+        TimeZoneInfo clubTimeZone,
         ILogger<DemoSessionRegistry> logger)
     {
         this.productionFactory = productionFactory;
         this.timeProvider = timeProvider;
+        this.clubTimeZone = clubTimeZone;
         this.logger = logger;
         var idleMinutes = configuration.GetValue("DemoMode:SessionIdleMinutes", 30);
         maxSessions = configuration.GetValue("DemoMode:MaxSessions", 100);
@@ -149,6 +152,8 @@ public sealed class DemoSessionRegistry
             .Where(x => reservationIds.Contains(x.ReservationId))
             .ToListAsync(cancellationToken);
 
+        ProjectCollectableReservation(reservations, payments);
+
         await using var target = new PadelitoDbContext(targetOptions);
         await target.Database.EnsureCreatedAsync(cancellationToken);
         target.Clubs.Add(Copy(club));
@@ -163,6 +168,28 @@ public sealed class DemoSessionRegistry
         target.Payments.AddRange(payments.Select(Copy));
         target.ReservationAudits.AddRange(audits.Select(Copy));
         await target.SaveChangesAsync(cancellationToken);
+    }
+
+    private void ProjectCollectableReservation(
+        IReadOnlyCollection<Reservation> reservations,
+        IReadOnlyCollection<Payment> payments)
+    {
+        var paidReservationIds = payments.Select(x => x.ReservationId).ToHashSet();
+        var unpaidReservations = reservations
+            .Where(x => !paidReservationIds.Contains(x.Id))
+            .OrderByDescending(x => x.ReservationDate)
+            .ThenByDescending(x => x.Id);
+        var candidate = unpaidReservations
+            .FirstOrDefault(x => ReservationStatusIds.Active.Contains(x.ReservationStatusId))
+            ?? unpaidReservations.FirstOrDefault(x => x.ReservationStatusId == ReservationStatusIds.Cancelled);
+        if (candidate is null)
+        {
+            return;
+        }
+
+        var localNow = TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), clubTimeZone);
+        candidate.ReservationStatusId = ReservationStatusIds.Pending;
+        candidate.ReservationDate = DateOnly.FromDateTime(localNow.DateTime).AddDays(1);
     }
 
     private static Club Copy(Club x) => new() { Id = x.Id, Name = x.Name, Address = x.Address, Phone = x.Phone, Email = x.Email, IsActive = x.IsActive, CreatedAt = x.CreatedAt };

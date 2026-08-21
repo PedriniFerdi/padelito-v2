@@ -94,6 +94,52 @@ public sealed class DemoSessionIntegrationTests
     }
 
     [Fact]
+    public async Task Demo_payment_is_collectable_in_one_page_load_and_resets_on_reload()
+    {
+        await using var factory = new PadelitoApiFactory(demoAdmin: true);
+        using var client = factory.CreateClient();
+        await LoginAsync(client);
+        client.DefaultRequestHeaders.Add(DemoSessionMiddleware.HeaderName, Guid.NewGuid().ToString());
+
+        var activeReservations = await client.GetFromJsonAsync<List<ReservationListDto>>(
+            "/api/reservations?view=active");
+        var candidate = Assert.Single(activeReservations!);
+        Assert.True(candidate.CanCollect);
+        Assert.Equal(new DateOnly(2026, 7, 13), candidate.ReservationDate);
+
+        var paymentResponse = await client.PostAsJsonAsync("/api/payments", new PaymentCreateDto(
+            candidate.Id, 1, "Temporary demo payment"));
+        paymentResponse.EnsureSuccessStatusCode();
+        var payment = (await paymentResponse.Content.ReadFromJsonAsync<PaymentListDto>())!;
+        Assert.Equal(candidate.Id, payment.ReservationId);
+        Assert.Equal(candidate.FinalPrice, payment.Amount);
+
+        var currentPayments = await client.GetFromJsonAsync<List<PaymentListDto>>("/api/payments");
+        Assert.Contains(currentPayments!, x => x.ReservationId == candidate.Id && x.Note == "Temporary demo payment");
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var production = scope.ServiceProvider
+            .GetRequiredService<IProductionPadelitoDbContextFactory>()
+            .CreateDbContext())
+        {
+            Assert.False(await production.Payments.AnyAsync(x => x.ReservationId == candidate.Id));
+        }
+
+        client.DefaultRequestHeaders.Remove(DemoSessionMiddleware.HeaderName);
+        client.DefaultRequestHeaders.Add(DemoSessionMiddleware.HeaderName, Guid.NewGuid().ToString());
+
+        var reloadedReservations = await client.GetFromJsonAsync<List<ReservationListDto>>(
+            "/api/reservations?view=active");
+        var reloadedCandidate = Assert.Single(reloadedReservations!);
+        Assert.Equal(candidate.Id, reloadedCandidate.Id);
+        Assert.True(reloadedCandidate.CanCollect);
+        Assert.Equal(0m, reloadedCandidate.TotalPaid);
+
+        var reloadedPayments = await client.GetFromJsonAsync<List<PaymentListDto>>("/api/payments");
+        Assert.DoesNotContain(reloadedPayments!, x => x.Note == "Temporary demo payment");
+    }
+
+    [Fact]
     public async Task Reception_public_account_is_also_isolated_from_production_data()
     {
         await using var factory = new PadelitoApiFactory(demoAdmin: true);
