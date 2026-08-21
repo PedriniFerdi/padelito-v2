@@ -139,7 +139,7 @@ export function AppLayout() {
               </div>
               <div className="hidden min-w-0 sm:block">
                 <p className="truncate text-sm font-semibold leading-5 text-[#f0f2f5]">{user?.username}</p>
-                <p className="truncate text-xs font-medium leading-4 text-[#969da8]">{user?.role}</p>
+                <p className="truncate text-xs font-medium leading-4 text-[#969da8]">{user?.role}{user?.isDemo ? ' · Demo' : ''}</p>
               </div>
             </div>
             <button
@@ -152,6 +152,12 @@ export function AppLayout() {
             </button>
           </div>
         </header>
+
+        {user?.isDemo ? (
+          <div className="relative z-10 border-b border-amber-300/25 bg-amber-300/10 px-4 py-2.5 text-center text-sm font-semibold text-amber-100" role="status">
+            Demo mode — changes are temporary and reset when you reload.
+          </div>
+        ) : null}
 
         <nav className="relative z-10 flex gap-1 overflow-x-auto border-b border-white/[0.08] bg-[#131b2e]/95 p-2 backdrop-blur-xl lg:hidden">
           {visibleItems.map((item) => (

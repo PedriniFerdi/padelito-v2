@@ -11,6 +11,7 @@ export type CurrentUser = {
   employeeId: number
   role: Role
   clubId: number
+  isDemo: boolean
 }
 
 export type LoginRequest = {

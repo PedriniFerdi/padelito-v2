@@ -18,6 +18,7 @@ import {
   type UserUpdatePayload,
 } from '@/api/catalogs.api'
 import { ApiRequestError } from '@/api/http'
+import { useAuth } from '@/features/auth/AuthProvider'
 import {
   courtSchema,
   courtTypeSchema,
@@ -63,6 +64,7 @@ function PageShell({
   onCreate: () => void
   title: string
 }) {
+  const { user } = useAuth()
   return (
     <section className="space-y-4 rounded-2xl border border-[#3e4943] bg-[#131b2e]/75 p-5 shadow-[0_18px_46px_rgba(6,14,32,0.22)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -72,7 +74,7 @@ function PageShell({
         </div>
         <button className="inline-flex translate-y-0 items-center gap-2 rounded-xl bg-[#057a55] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(0,82,54,0.24)] transition duration-200 hover:-translate-y-px hover:bg-[#006c4b] active:translate-y-0" onClick={onCreate} type="button">
           <Plus aria-hidden="true" className="size-4" strokeWidth={2.2} />
-          {actionLabel}
+          {user?.isDemo ? `Try ${actionLabel.toLocaleLowerCase('en-US')}` : actionLabel}
         </button>
       </div>
       {children}

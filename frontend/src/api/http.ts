@@ -1,4 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const DEMO_SESSION_HEADER = 'X-Demo-Session-Id'
+
+let demoSessionId = crypto.randomUUID()
 
 let handleUnauthorized: (() => void) | null = null
 
@@ -15,6 +18,10 @@ export function setUnauthorizedHandler(handler: () => void) {
   handleUnauthorized = handler
 }
 
+export function resetDemoSession() {
+  demoSessionId = crypto.randomUUID()
+}
+
 export async function apiFetch<TResponse>(
   path: string,
   init?: RequestInit,
@@ -24,6 +31,7 @@ export async function apiFetch<TResponse>(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      [DEMO_SESSION_HEADER]: demoSessionId,
       ...init?.headers,
     },
   })
@@ -46,6 +54,7 @@ export async function apiFetch<TResponse>(
 export async function apiDownload(path: string): Promise<Blob> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: 'include',
+    headers: { [DEMO_SESSION_HEADER]: demoSessionId },
   })
   if (!response.ok) {
     if (response.status === 401) handleUnauthorized?.()
