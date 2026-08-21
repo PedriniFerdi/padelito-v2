@@ -17,6 +17,9 @@ public abstract class CatalogControllerBase : ControllerBase
         }
     }
 
+    protected string CurrentUsername =>
+        User.FindFirstValue(ClaimTypes.Name) ?? throw new UnauthorizedAccessException();
+
     protected ActionResult<T> Handle<T>(Func<T> action)
     {
         try

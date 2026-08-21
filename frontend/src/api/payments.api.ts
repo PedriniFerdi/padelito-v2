@@ -2,7 +2,7 @@ import { apiFetch } from './http'
 import type { Payment, PaymentMethod } from '@/types/api'
 
 export type PaymentFilters = { dateFrom?: string; dateTo?: string; methodId?: number; reservationId?: number }
-export type PaymentPayload = { reservationId: number; paymentMethodId: number; amount: number; paymentDate: string; note?: string | null }
+export type PaymentPayload = { reservationId: number; paymentMethodId: number; note?: string | null }
 
 function queryString(values: PaymentFilters) {
   const params = new URLSearchParams()

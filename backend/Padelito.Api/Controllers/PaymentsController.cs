@@ -16,5 +16,5 @@ public sealed class PaymentsController(IPaymentService paymentService) : Catalog
 
     [HttpPost]
     public Task<ActionResult<PaymentListDto>> Create(PaymentCreateDto request, CancellationToken cancellationToken) =>
-        HandleAsync(() => paymentService.CreateAsync(CurrentClubId, request, cancellationToken));
+        HandleAsync(() => paymentService.CreateAsync(CurrentClubId, CurrentUsername, request, cancellationToken));
 }

@@ -53,7 +53,7 @@ export function DashboardPage() {
   ] as const
   const kpis = [
     ['Collected revenue', money.format(intelligence.summary.totalRevenue), TrendingUp, 'text-[#6fe0b2]', 'bg-[#003824]'],
-    ['Outstanding balance', money.format(intelligence.summary.pendingBalance), AlertTriangle, 'text-[#ffd166]', 'bg-[#3c2f12]'],
+    ['Upcoming balance to collect', money.format(intelligence.summary.pendingBalance), AlertTriangle, 'text-[#ffd166]', 'bg-[#3c2f12]'],
     ['Average occupancy', `${percent.format(intelligence.summary.averageOccupancyRate)}%`, MapPin, 'text-[#9cc9ff]', 'bg-[#18314f]'],
     ['Cancellations', `${percent.format(intelligence.summary.cancellationRate)}%`, Percent, 'text-[#ffb4ab]', 'bg-[#4a1d20]'],
   ] as const

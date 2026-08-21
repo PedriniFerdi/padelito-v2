@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Banknote, CalendarClock, Check, CircleX, CreditCard, Flag, RefreshCw, TimerReset } from 'lucide-react'
+import { Banknote, CalendarClock, Check, CircleX, CreditCard, Flag, Plus, RefreshCw, TimerReset } from 'lucide-react'
 import { ApiRequestError } from '@/api/http'
 import { paymentsApi } from '@/api/payments.api'
 import { reservationsApi } from '@/api/reservations.api'
 import { PaymentDialog } from '@/components/payments/PaymentDialog'
+import { CreateReservationPanel } from '@/pages/ReservationsPage'
 import type { OperationsReservation, Reservation, ReservationStatus } from '@/types/api'
 
 const statusIds = {
@@ -23,12 +24,13 @@ function errorMessage(error: unknown) {
 export function OperationsBoardPage() {
   const queryClient = useQueryClient()
   const [paymentReservationId, setPaymentReservationId] = useState<number>()
+  const [showCreate, setShowCreate] = useState(false)
   const [actionError, setActionError] = useState<string>()
   const board = useQuery({ queryKey: ['operations-board'], queryFn: reservationsApi.operationsBoard, refetchInterval: 60000 })
   const methods = useQuery({ queryKey: ['payment-methods'], queryFn: paymentsApi.methods })
 
   const paymentReservations = useMemo(
-    () => (board.data?.timelineByCourt.flatMap((court) => court.reservations).filter((reservation) => reservation.status !== 'Canceled').map(toReservation) ?? []),
+    () => (board.data?.timelineByCourt.flatMap((court) => court.reservations).filter((reservation) => reservation.canCollect).map(toReservation) ?? []),
     [board.data],
   )
 
@@ -67,16 +69,41 @@ export function OperationsBoardPage() {
             {formatDate(data.operationalDate)} - updated {formatTime(data.generatedAt)}
           </p>
         </div>
-        <button
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#3e4943] bg-[#171f33] px-3 text-sm font-bold text-[#dae2fd] transition hover:border-[#6fe0b2] hover:text-white disabled:opacity-60"
-          disabled={board.isFetching}
-          onClick={() => board.refetch()}
-          type="button"
-        >
-          <RefreshCw className={`size-4 ${board.isFetching ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#0F766E] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(15,118,110,0.2)] transition hover:bg-[#115E59] active:translate-y-px"
+            onClick={() => { setShowCreate(true); setActionError(undefined) }}
+            type="button"
+          >
+            <Plus className="size-4" strokeWidth={2} />
+            New reservation
+          </button>
+          <button
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#3e4943] bg-[#171f33] px-3 text-sm font-bold text-[#dae2fd] transition hover:border-[#6fe0b2] hover:text-white disabled:opacity-60"
+            disabled={board.isFetching}
+            onClick={() => board.refetch()}
+            type="button"
+          >
+            <RefreshCw className={`size-4 ${board.isFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </header>
+
+      {showCreate ? (
+        <CreateReservationPanel
+          onClose={() => setShowCreate(false)}
+          onCreated={async () => {
+            setShowCreate(false)
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ['operations-board'] }),
+              queryClient.invalidateQueries({ queryKey: ['reservations'] }),
+              queryClient.invalidateQueries({ queryKey: ['reservation-availability'] }),
+              queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+            ])
+          }}
+        />
+      ) : null}
 
       {actionError ? <ErrorBanner message={actionError} /> : null}
 
@@ -281,16 +308,13 @@ function QuickActions({
 }) {
   return (
     <div className="flex flex-wrap justify-end gap-2">
-      {reservation.pendingBalance > 0 && reservation.status !== 'Canceled' ? (
+      {reservation.canCollect ? (
         <ActionButton icon={CreditCard} label="Collect" onClick={() => onPay(reservation.id)} />
       ) : null}
-      {reservation.status === 'Pending' ? (
+      {reservation.canConfirm ? (
         <ActionButton disabled={disabled} icon={Check} label="Check-in" onClick={() => onChangeStatus(reservation.id, statusIds.Confirmed)} />
       ) : null}
-      {reservation.status === 'Confirmed' ? (
-        <ActionButton disabled={disabled} icon={Flag} label="Complete" onClick={() => onChangeStatus(reservation.id, statusIds.Completed)} />
-      ) : null}
-      {reservation.status === 'Pending' || reservation.status === 'Confirmed' ? (
+      {reservation.canCancel ? (
         <ActionButton destructive disabled={disabled} icon={CircleX} label="Cancel" onClick={() => onChangeStatus(reservation.id, statusIds.Canceled)} />
       ) : null}
     </div>
@@ -399,6 +423,12 @@ function toReservation(reservation: OperationsReservation): Reservation {
     promotionName: null,
     basePrice: reservation.finalPrice,
     finalPrice: reservation.finalPrice,
+    totalPaid: reservation.totalPaid,
+    pendingBalance: reservation.pendingBalance,
+    paymentStatus: reservation.paymentStatus,
+    canCollect: reservation.canCollect,
+    canConfirm: reservation.canConfirm,
+    canCancel: reservation.canCancel,
     createdAt: `${reservation.reservationDate}T00:00:00`,
   }
 }

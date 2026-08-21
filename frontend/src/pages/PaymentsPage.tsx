@@ -22,10 +22,9 @@ export function PaymentsPage() {
   const payments = useQuery({ queryKey: ['payments', filters], queryFn: () => paymentsApi.list(filters) })
   const methods = useQuery({ queryKey: ['payment-methods'], queryFn: paymentsApi.methods })
   const active = useQuery({ queryKey: ['reservations', 'active', 'payments'], queryFn: () => reservationsApi.list({ view: 'active' }) })
-  const history = useQuery({ queryKey: ['reservations', 'history', 'payments'], queryFn: () => reservationsApi.list({ view: 'history' }) })
   const reservations = useMemo(
-    () => [...(active.data ?? []), ...(history.data ?? [])].filter((reservation) => reservation.status !== 'Canceled'),
-    [active.data, history.data],
+    () => (active.data ?? []).filter((reservation) => reservation.canCollect),
+    [active.data],
   )
   const total = payments.data?.reduce((sum, payment) => sum + payment.amount, 0) ?? 0
 
@@ -37,9 +36,9 @@ export function PaymentsPage() {
             <CreditCard className="size-4" /> Checkout
           </div>
           <h2 className="mt-2 text-3xl font-black">Payments</h2>
-          <p className="mt-1 text-sm text-[#64748B]">Partial collections and open reservation balances.</p>
+          <p className="mt-1 text-sm text-[#64748B]">One full payment confirms the reservation automatically.</p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-xl bg-[#0F766E] px-4 py-2.5 text-sm font-bold text-white" onClick={() => setOpen(true)}>
+        <button className="inline-flex items-center gap-2 rounded-xl bg-[#0F766E] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50" disabled={reservations.length === 0} onClick={() => setOpen(true)}>
           <Plus className="size-4" /> Record payment
         </button>
       </header>

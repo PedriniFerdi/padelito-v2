@@ -12,7 +12,7 @@ financial consistency.
 ## The problem
 
 Padel clubs coordinate a deceptively complex daily operation. Staff need to know
-which courts are available, prevent conflicting bookings, collect partial or full
+which courts are available, prevent conflicting bookings, collect full
 payments, apply promotions, and keep a reliable history of every change.
 
 When these workflows live in spreadsheets, chat messages, and disconnected
@@ -47,9 +47,9 @@ allowed status transitions.
 
 ### Payments and balances
 
-Payments can be partial or complete. The payment flow exposes the remaining
-balance and prevents concurrent requests from pushing the collected amount above
-the reservation total.
+Each reservation accepts one full payment before its time slot starts. The
+server calculates the amount from the final reservation price, and concurrent
+requests cannot create a second payment.
 
 ![Payment registration flow](docs/screenshots/payments.png)
 
@@ -76,7 +76,7 @@ to the authenticated user's role.
 - Availability-based booking with conflict prevention and cancelled-slot reuse.
 - Controlled reservation lifecycle: pending, confirmed, completed, or cancelled.
 - Duration-based pricing and optional date-bound promotions.
-- Partial and full payments with live outstanding-balance calculation.
+- One server-calculated full payment per reservation, with automatic confirmation.
 - Revenue, occupancy, demand, cancellation, and promotion analytics.
 - Date and status reporting with UTF-8 CSV export.
 - Administrative audit trail for reservation creation and status changes.
@@ -137,8 +137,8 @@ the database remains the final authority under concurrency:
   same date and time slot.
 - A SQL Server trigger prevents overlapping active schedules for the same court,
   including writes from another application instance or direct SQL.
-- Payment creation runs in a serializable transaction and recalculates the
-  committed balance before accepting the payment.
+- Payment creation runs in a serializable transaction, records the server-side
+  final price, and relies on a unique reservation index to reject duplicates.
 
 This separates user-friendly validation from correctness guarantees.
 
@@ -182,7 +182,7 @@ and HTTP integration scenarios, including:
 
 - Login and role-protected endpoints.
 - Reservation pricing, availability, conflicts, and status transitions.
-- Partial payments, overpayment prevention, and concurrent balance changes.
+- Full-payment calculation, duplicate-payment prevention, and concurrent requests.
 - Dashboard and report calculations.
 - JSON and CSV report responses.
 - Club-level data isolation.
@@ -211,11 +211,31 @@ From the repository root:
 
 ```bash
 dotnet tool restore
+sqlcmd -S <SQL_SERVER> -d <DATABASE> -b -i docs/remediation/sql/PRD-BLK-003-preflight.sql
 dotnet tool run dotnet-ef database update --project backend/Padelito.Infrastructure --startup-project backend/Padelito.Api
 ```
 
-The migrations create the schema and load a complete demo dataset with clients,
-courts, schedules, promotions, reservations, payments, and audit events.
+Before upgrading a persistent database, stop every application version that can
+write payments, capture and test a restorable backup, and run the PRD-BLK-003
+preflight with an explicitly selected connection. If it reports a non-matching
+or multiple-payment history, stop: the migration will preserve the records and
+fail until a separately approved reconciliation is completed. Never delete or
+merge payments merely to make the unique index pass.
+
+The migration chain creates the schema and the global reference catalogs only:
+roles, reservation statuses, payment methods, and court types. It never creates
+or deletes clubs, administrators, customers, reservations, payments, or audit
+history.
+
+Provision the first club and administrator only after migrations have completed.
+Set `Bootstrap__Enabled=true` and provide the required `Bootstrap__ClubName`,
+`Bootstrap__AdminUsername`, `Bootstrap__AdminPassword`,
+`Bootstrap__AdminFirstName`, `Bootstrap__AdminLastName`,
+`Bootstrap__AdminDni`, `Bootstrap__AdminPhone`, and
+`Bootstrap__AdminEmail` values through a private configuration source. Start the
+API once, verify the created administrator, then disable bootstrap and remove
+its password from the runtime secret source. Bootstrap refuses partial,
+ambiguous, or mismatched application data.
 
 ### 2. Start the API
 
@@ -240,10 +260,9 @@ Open `http://localhost:5173`.
 
 ### Demo credentials
 
-```text
-Username: admin
-Password: admin123
-```
+There are no built-in credentials or demo business records in the production
+migration chain. Create disposable development credentials through the explicit
+bootstrap workflow above; never commit them.
 
 ## Validate the project
 

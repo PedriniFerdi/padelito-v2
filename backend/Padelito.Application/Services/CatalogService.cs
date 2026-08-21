@@ -33,7 +33,9 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
         var nonCancelledReservations = reservations.Where(x => x.ReservationStatusId != ReservationStatusIds.Cancelled).ToList();
         var completedReservations = reservations.Where(x => x.ReservationStatusId == ReservationStatusIds.Completed).ToList();
         var totalPaid = nonCancelledReservations.Sum(x => x.Payments.Sum(payment => payment.Amount));
-        var pendingBalance = nonCancelledReservations.Sum(x => Math.Max(0, x.FinalPrice - x.Payments.Sum(payment => payment.Amount)));
+        var pendingBalance = nonCancelledReservations
+            .Where(x => x.ReservationStatusId is ReservationStatusIds.Pending or ReservationStatusIds.Confirmed)
+            .Sum(x => Math.Max(0, x.FinalPrice - x.Payments.Sum(payment => payment.Amount)));
         var favoriteSlot = completedReservations
             .GroupBy(x => new { x.ReservationDate.DayOfWeek, x.AvailableTurn.StartTime })
             .Select(group => new
