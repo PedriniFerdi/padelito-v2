@@ -95,6 +95,7 @@ builder.Services.AddAuthorization(options =>
 var app = builder.Build();
 
 await ProductionBootstrapper.InitializeAsync(app.Services, app.Configuration, app.Logger);
+await DemoAccessProvisioner.InitializeAsync(app.Services, app.Configuration, app.Logger);
 
 if (app.Environment.IsDevelopment())
 {

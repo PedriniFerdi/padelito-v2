@@ -544,7 +544,7 @@ public sealed class CatalogService(ICatalogRepository repository, IPasswordHashe
     private static string NormalizeDni(string? value)
     {
         var normalized = RequireText(value, "Customer ID is required.").Replace(".", string.Empty).Replace(" ", string.Empty);
-        if (!Regex.IsMatch(normalized, @"^\d{7,8}$"))
+        if (!Regex.IsMatch(normalized, @"^\d{7,10}$"))
         {
             throw new BusinessException("Customer ID must contain 7 to 10 digits.");
         }
