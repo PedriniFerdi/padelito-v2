@@ -264,6 +264,12 @@ There are no built-in credentials or demo business records in the production
 migration chain. Create disposable development credentials through the explicit
 bootstrap workflow above; never commit them.
 
+For the separately maintained public portfolio deployment, existing public
+Admin and Reception accounts can be converted to isolated, non-persistent demo
+sessions while a private administrator is provisioned from a hosting secret.
+Follow [the demo access rollout](docs/operations/demo-access-rollout.md); never
+enable the provisioner without a verified backup and maintenance window.
+
 ## Validate the project
 
 Run the backend build and test suite from the repository root:
