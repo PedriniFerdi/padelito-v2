@@ -371,6 +371,18 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
                 },
                 new Employee { Id = 3, PersonId = 3, ClubId = 1 },
                 privateUser);
+            dbContext.Add(new Reservation
+            {
+                Id = 9001,
+                ClientId = 9001,
+                AvailableTurnId = 9001,
+                EmployeeId = 1,
+                ReservationDate = new DateOnly(2026, 7, 1),
+                ReservationStatusId = ReservationStatusIds.Pending,
+                BasePrice = 18000m,
+                FinalPrice = 18000m,
+                CreatedAt = now
+            });
         }
         dbContext.SaveChanges();
     }
