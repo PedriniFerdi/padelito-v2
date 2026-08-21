@@ -260,7 +260,7 @@ All commands ran from repository root unless another working directory is shown.
 
 | Command | Working directory | Exit | Result |
 | --- | --- | ---: | --- |
-| `Get-Content -Raw -LiteralPath 'C:\Users\Ferdinando\.codex\skills\production-readiness\SKILL.md'` | repository root | 0 | Audit rules loaded. |
+| Repository audit guidance loaded from the local skill registry | repository root | 0 | Audit rules loaded. |
 | `Get-ChildItem -Force ...; rg --files ...; git status --short --branch; git log -1 ...` | repository root | 0 | Stack/files discovered; dirty baseline and commit captured. |
 | `Get-Content`/`rg -n` targeted inspections of project files, configuration key shapes, controllers, services, repositories, migrations, tests, README, and `.gitignore` | repository root | 0 except one malformed final `rg` expression | Architecture, auth, tenant, migration, performance, deployment, and secrets metadata inspected. No secret values retained in evidence. |
 | `git branch --show-current; git rev-parse HEAD; git status --short; git diff --stat; dotnet --version; dotnet --info; node --version; npm --version; ...` | repository root | 0 overall; `npm.ps1` subcommand blocked by local execution policy | `main`, commit captured; .NET preview SDK and Node `v24.18.0`; dependencies/assets present. Later npm commands used `npm.cmd`. |

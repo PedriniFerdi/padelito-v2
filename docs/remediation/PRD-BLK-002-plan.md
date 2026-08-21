@@ -243,7 +243,7 @@ The SQL Server integration test command must be run only after its harness prove
 - Roles, reservation statuses, payment methods, and court types are stable global reference catalogs.
 - Application-owned business data must be absent after schema migration and created only through explicit bootstrap/application workflows.
 - Existing user changes are intentional and must be preserved.
-- The only known persistent environment is the user-reported MonsterASP.NET demo/portfolio database. No database contents, row counts, monetary totals, or secret values were inspected by Codex.
+- The only known persistent environment is the user-reported MonsterASP.NET demo/portfolio database. No database contents, row counts, monetary totals, or secret values were inspected by local automation.
 
 ### Decisions requiring human input
 
