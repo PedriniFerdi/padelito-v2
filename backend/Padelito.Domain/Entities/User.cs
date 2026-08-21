@@ -7,6 +7,7 @@ public sealed class User
     public required string PasswordHash { get; set; }
     public int EmployeeId { get; set; }
     public int RoleId { get; set; }
+    public bool IsDemo { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
 

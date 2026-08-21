@@ -131,7 +131,8 @@ public sealed class ProductionBootstrapperTests
             new SetAdminDemoPassword(),
             new CompleteDemoSeed(),
             new PrepareProductionData(),
-            new AddUsPortfolioDemoSeed()
+            new AddUsPortfolioDemoSeed(),
+            new AddDemoUserFlag()
         };
         var allowedSeedTables = new HashSet<string>(StringComparer.Ordinal)
         {

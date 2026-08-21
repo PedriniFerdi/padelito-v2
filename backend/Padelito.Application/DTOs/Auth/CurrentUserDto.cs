@@ -7,4 +7,5 @@ public sealed class CurrentUserDto
     public int EmployeeId { get; init; }
     public required string Role { get; init; }
     public int ClubId { get; init; }
+    public bool IsDemo { get; init; }
 }
