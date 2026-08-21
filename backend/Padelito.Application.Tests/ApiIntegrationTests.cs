@@ -235,6 +235,17 @@ public sealed class ApiIntegrationTests : IClassFixture<PadelitoApiFactory>
 public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
 {
     private readonly string databaseName = $"padelito-tests-{Guid.NewGuid()}";
+    private readonly InMemoryDatabaseRoot databaseRoot = new();
+    private readonly bool demoAdmin;
+
+    public PadelitoApiFactory() : this(false)
+    {
+    }
+
+    internal PadelitoApiFactory(bool demoAdmin)
+    {
+        this.demoAdmin = demoAdmin;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -242,13 +253,12 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
         builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<DbContextOptions<PadelitoDbContext>>();
-            services.RemoveAll<IDbContextOptionsConfiguration<PadelitoDbContext>>();
-            services.RemoveAll<IDatabaseProvider>();
-            services.RemoveAll<PadelitoDbContext>();
-            services.AddDbContext<PadelitoDbContext>(options => options
-                .UseInMemoryDatabase(databaseName)
-                .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
+            var options = new DbContextOptionsBuilder<PadelitoDbContext>()
+                .UseInMemoryDatabase(databaseName, databaseRoot)
+                .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+            services.RemoveAll<IProductionPadelitoDbContextFactory>();
+            services.AddSingleton<IProductionPadelitoDbContextFactory>(new TestPadelitoDbContextFactory(options));
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(new FixedTimeProvider(new(2026, 7, 12, 12, 0, 0, TimeSpan.Zero)));
             using var provider = services.BuildServiceProvider();
@@ -259,7 +269,7 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
         });
     }
 
-    private static void SeedApiTestData(PadelitoDbContext dbContext)
+    private void SeedApiTestData(PadelitoDbContext dbContext)
     {
         var now = DateTime.UtcNow;
         var club = new Club { Id = 1, Name = "Padelito Test", IsActive = true, CreatedAt = now };
@@ -293,6 +303,7 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
             PasswordHash = string.Empty,
             EmployeeId = 1,
             RoleId = 1,
+            IsDemo = demoAdmin,
             IsActive = true,
             CreatedAt = now
         };
@@ -307,7 +318,67 @@ public sealed class PadelitoApiFactory : WebApplicationFactory<Program>
             user,
             new Court { Id = 9001, ClubId = 1, CourtTypeId = 2, Name = "Central Test", HourPrice = 18000m, IsActive = true },
             new AvailableTurn { Id = 9001, CourtId = 9001, StartTime = new TimeOnly(10, 0), EndTime = new TimeOnly(11, 30), IsActive = true });
+        if (demoAdmin)
+        {
+            var receptionUser = new User
+            {
+                Id = 2,
+                Username = "juanperez",
+                PasswordHash = string.Empty,
+                EmployeeId = 2,
+                RoleId = 2,
+                IsDemo = true,
+                IsActive = true,
+                CreatedAt = now
+            };
+            receptionUser.PasswordHash = new PasswordHasher<User>().HashPassword(receptionUser, "reception123");
+            var privateUser = new User
+            {
+                Id = 3,
+                Username = "Ferdi",
+                PasswordHash = string.Empty,
+                EmployeeId = 3,
+                RoleId = 1,
+                IsDemo = false,
+                IsActive = true,
+                CreatedAt = now
+            };
+            privateUser.PasswordHash = new PasswordHasher<User>().HashPassword(privateUser, "private-test-password");
+            dbContext.AddRange(
+                new Person
+                {
+                    Id = 2,
+                    FirstName = "Reception",
+                    LastName = "Test",
+                    Dni = "30111223",
+                    Phone = "1140001002",
+                    Email = "reception@test.local",
+                    IsActive = true,
+                    CreatedAt = now
+                },
+                new Employee { Id = 2, PersonId = 2, ClubId = 1 },
+                receptionUser,
+                new Person
+                {
+                    Id = 3,
+                    FirstName = "Ferdi",
+                    LastName = "Admin",
+                    Dni = "99000001",
+                    Phone = "+1 555 010 0001",
+                    Email = "ferdi.admin@example.test",
+                    IsActive = true,
+                    CreatedAt = now
+                },
+                new Employee { Id = 3, PersonId = 3, ClubId = 1 },
+                privateUser);
+        }
         dbContext.SaveChanges();
     }
 
+}
+
+internal sealed class TestPadelitoDbContextFactory(
+    DbContextOptions<PadelitoDbContext> options) : IProductionPadelitoDbContextFactory
+{
+    public PadelitoDbContext CreateDbContext() => new(options);
 }

@@ -37,6 +37,8 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<DemoSessionRegistry>();
+builder.Services.AddHostedService<DemoSessionCleanupService>();
 builder.Services.AddHostedService<ReservationLifecycleWorker>();
 builder.Services.AddSingleton(_ =>
 {
@@ -125,6 +127,7 @@ else
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseAuthentication();
+app.UseMiddleware<DemoSessionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
