@@ -46,6 +46,19 @@ public sealed class CatalogServiceTests
         Assert.Equal("The customer does not exist.", exception.Message);
     }
 
+    [Fact]
+    public async Task Client_update_accepts_nine_digit_customer_id_consistently_with_public_contract()
+    {
+        var repository = new CatalogRepositoryFake { Client = ClientWithReservations() };
+        var service = new CatalogService(repository, new PasswordHasher<User>());
+
+        var updated = await service.UpdateClientAsync(1, new ClientUpdateDto(
+            "Ferdinando", "Perez", "555010199", "(917) 555-0199", "ferdinando.perez@example.com"), default);
+
+        Assert.Equal("555010199", updated.Dni);
+        Assert.Equal("555010199", repository.Client!.Person.Dni);
+    }
+
     private static Client ClientWithReservations(params Reservation[] reservations)
     {
         var client = new Client
@@ -105,6 +118,7 @@ public sealed class CatalogServiceTests
 
     private sealed class CatalogRepositoryFake : ICatalogRepository
     {
+        public Client? Client { get; init; }
         public Client? ProfileClient { get; init; }
 
         public Task<Client?> GetClientProfileAsync(int id, int clubId, CancellationToken cancellationToken) =>
@@ -112,7 +126,8 @@ public sealed class CatalogServiceTests
 
         public Task<List<PaymentMethod>> GetPaymentMethodsAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<List<Client>> GetClientsAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<Client?> GetClientAsync(int id, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<Client?> GetClientAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult(Client?.Id == id ? Client : null);
         public Task AddClientAsync(Client client, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<List<EmployeeReadModel>> GetEmployeesAsync(int clubId, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<Employee?> GetEmployeeAsync(int id, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -123,7 +138,7 @@ public sealed class CatalogServiceTests
         public Task<List<Role>> GetRolesAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<Role?> GetRoleAsync(int id, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<bool> UsernameExistsAsync(string username, int? excludingUserId, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<bool> PersonDniExistsAsync(string dni, int? excludingPersonId, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<bool> PersonDniExistsAsync(string dni, int? excludingPersonId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<bool> EmployeeHasUserAsync(int employeeId, int? excludingUserId, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<List<CourtType>> GetCourtTypesAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<CourtType?> GetCourtTypeAsync(int id, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -140,6 +155,6 @@ public sealed class CatalogServiceTests
         public Task<List<Promotion>> GetPromotionsAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<Promotion?> GetPromotionAsync(int id, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task AddPromotionAsync(Promotion promotion, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task SaveChangesAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

@@ -37,6 +37,8 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<DemoSessionRegistry>();
+builder.Services.AddHostedService<DemoSessionCleanupService>();
 builder.Services.AddHostedService<ReservationLifecycleWorker>();
 builder.Services.AddSingleton(_ =>
 {
@@ -93,6 +95,7 @@ builder.Services.AddAuthorization(options =>
 var app = builder.Build();
 
 await ProductionBootstrapper.InitializeAsync(app.Services, app.Configuration, app.Logger);
+await DemoAccessProvisioner.InitializeAsync(app.Services, app.Configuration, app.Logger);
 
 if (app.Environment.IsDevelopment())
 {
@@ -125,6 +128,7 @@ else
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseAuthentication();
+app.UseMiddleware<DemoSessionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

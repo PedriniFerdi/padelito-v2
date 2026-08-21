@@ -14,8 +14,21 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("PadelitoDb")
             ?? throw new InvalidOperationException("Connection string 'PadelitoDb' was not found.");
 
-        services.AddDbContext<PadelitoDbContext>(options =>
-            options.UseSqlServer(connectionString));
+        var productionOptions = new DbContextOptionsBuilder<PadelitoDbContext>()
+            .UseSqlServer(connectionString)
+            .Options;
+        services.AddSingleton<IProductionPadelitoDbContextFactory>(
+            new ProductionPadelitoDbContextFactory(productionOptions));
+        services.AddScoped<PadelitoDatabaseSessionAccessor>();
+        services.AddScoped(serviceProvider =>
+        {
+            var sessionOptions = serviceProvider
+                .GetRequiredService<PadelitoDatabaseSessionAccessor>()
+                .SessionOptions;
+            return sessionOptions is null
+                ? serviceProvider.GetRequiredService<IProductionPadelitoDbContextFactory>().CreateDbContext()
+                : new PadelitoDbContext(sessionOptions);
+        });
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICatalogRepository, CatalogRepository>();

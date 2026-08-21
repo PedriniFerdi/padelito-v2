@@ -25,6 +25,7 @@ public sealed class JwtTokenService(IConfiguration configuration) : IJwtTokenSer
             new("EmployeeId", user.EmployeeId.ToString()),
             new("Role", user.Role),
             new("ClubId", user.ClubId.ToString()),
+            new("IsDemo", user.IsDemo.ToString()),
             new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Role, user.Role)

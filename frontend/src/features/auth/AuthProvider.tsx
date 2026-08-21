@@ -8,7 +8,7 @@ import {
   type PropsWithChildren,
 } from 'react'
 import { fetchCurrentUser, login as loginRequest, logout as logoutRequest } from '@/api/auth.api'
-import { setUnauthorizedHandler } from '@/api/http'
+import { resetDemoSession, setUnauthorizedHandler } from '@/api/http'
 import type { CurrentUser, LoginRequest } from '@/types/api'
 
 type AuthContextValue = {
@@ -27,6 +27,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const clearSession = useCallback(() => {
     setUser(null)
+    resetDemoSession()
   }, [])
 
   const logout = useCallback(() => {

@@ -70,7 +70,8 @@ public sealed class AuthService(
             Username = user.Username,
             EmployeeId = user.EmployeeId,
             Role = CanonicalRoleName(user.Role.Name),
-            ClubId = user.Employee.ClubId
+            ClubId = user.Employee.ClubId,
+            IsDemo = user.IsDemo
         };
     }
 
